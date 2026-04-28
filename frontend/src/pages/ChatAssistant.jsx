@@ -434,7 +434,7 @@ export default function ChatAssistant() {
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
                 placeholder={activeDocuments.length > 0
                   ? `Ask about ${activeDocuments.map(d => d.name || d.file_name).slice(0, 2).join(', ')} in English or नेपाली...`
-                  : 'Ask Vault AI about your documents in English or नेपाली...'}
+                  : 'Ask BankAi about your documents in English or नेपाली...'}
                 className="w-full pl-12 pr-28 py-4 bg-slate-100 border-none focus:ring-2 focus:ring-secondary/20 rounded font-body-sm text-on-surface placeholder:text-slate-400 resize-none min-h-[56px] max-h-[160px] leading-relaxed outline-none"
                 rows={1}
                 disabled={isLoading && !abortCtrl}
