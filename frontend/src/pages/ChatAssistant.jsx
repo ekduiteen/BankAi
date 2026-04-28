@@ -133,6 +133,49 @@ export default function ChatAssistant() {
     } catch (_) {}
   }, [fetchSessions]);
 
+  // ── Poll document status ────────────────────────────────────────────────
+  useEffect(() => {
+    if (activeDocuments.length === 0) return;
+
+    const hasProcessing = activeDocuments.some(d =>
+      !['ready','approved','indexed','failed'].includes(d.status)
+    );
+    if (!hasProcessing) {
+      // All documents ready - clear any stale processing warnings
+      setMessages(prev => prev.filter(m =>
+        !m.content?.includes('is still being processed')
+      ));
+      return;
+    }
+
+    console.log('Polling document status...');
+    const pollInterval = setInterval(async () => {
+      try {
+        const ids = activeDocuments.map(d => d.id).join(',');
+        const res = await api.get(`/documents?ids=${ids}&limit=200`);
+        const updated = res.data.filter(d => activeDocuments.some(ad => ad.id === d.id));
+        if (updated.length > 0) {
+          setActiveDocuments(prev =>
+            prev.map(d => updated.find(u => u.id === d.id) || d)
+          );
+          console.log('Document status updated:', updated.map(d => `${d.file_name}=${d.status}`));
+
+          // Clear stale warnings if documents are now ready
+          const allReady = updated.every(d => ['ready','approved','indexed'].includes(d.status));
+          if (allReady) {
+            setMessages(prev => prev.filter(m =>
+              !m.content?.includes('is still being processed')
+            ));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to poll document status:', err.message);
+      }
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [activeDocuments]);
+
   // ── Bootstrap ────────────────────────────────────────────────────────────
   useEffect(() => {
     const init = async () => {
