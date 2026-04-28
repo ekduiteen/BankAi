@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ChatAssistant from './pages/ChatAssistant';
 import Documents from './pages/Documents';
+import Features from './pages/Features';
 import Users from './pages/Users';
 import AuditLogs from './pages/AuditLogs';
 import Settings from './pages/Settings';
@@ -34,6 +35,7 @@ function App() {
           <Route path="dashboard"   element={<Dashboard />} />
           <Route path="chat"        element={<ChatAssistant />} />
           <Route path="documents"   element={<Documents />} />
+          <Route path="features"    element={<Features />} />
           <Route path="sessions"    element={<SessionHistory />} />
           <Route path="analytics"   element={<Analytics />} />
           <Route path="users"       element={<Users />} />

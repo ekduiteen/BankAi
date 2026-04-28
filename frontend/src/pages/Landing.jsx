@@ -369,7 +369,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA Section */}
+{/* CTA Section */}
       <section className="py-20 px-6 bg-primary-container text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold font-public-sans mb-6">
@@ -379,11 +379,17 @@ export default function Landing() {
             Experience the power of AI-driven financial document intelligence with enterprise-grade security.
             Deploy in the cloud for instant access, or on-premises for complete control.
           </p>
-          <button
-            onClick={() => navigate('/login')}
-            className="px-10 py-4 bg-white text-primary rounded font-bold text-lg hover:opacity-90 transition-opacity shadow-lg">
-            Launch Demo Now
-          </button>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <button
+              onClick={() => navigate('/login')}
+              className="px-10 py-4 bg-white text-primary rounded font-bold text-lg hover:opacity-90 transition-opacity shadow-lg">
+              Launch Demo Now
+            </button>
+            <button
+              className="px-10 py-4 border-2 border-white text-white rounded font-bold text-lg hover:bg-white hover:text-primary transition-colors">
+              Request Enterprise Quote
+            </button>
+          </div>
         </div>
       </section>
 

@@ -187,6 +187,25 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Features discovery card */}
+          <div
+            onClick={() => navigate('/features')}
+            className="mt-lg p-lg bg-secondary-container rounded-lg text-white cursor-pointer hover:opacity-90 transition-opacity"
+          >
+            <div className="flex items-center gap-2 mb-sm">
+              <span className="material-symbols-outlined text-on-secondary-container text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                lightbulb
+              </span>
+              <span className="font-label-caps text-[10px] tracking-widest text-on-secondary-container">Explore Features</span>
+            </div>
+            <div className="font-semibold text-body-md text-on-secondary-container">
+              Discover all BankAi capabilities
+            </div>
+            <p className="text-[11px] text-on-secondary-container opacity-70 mt-xs">
+              View detailed documentation of every feature and integration option.
+            </p>
+          </div>
+
           {/* Trust score card */}
           <div className="mt-lg p-lg bg-primary-container rounded-lg text-white">
             <div className="flex items-center gap-2 mb-sm">
