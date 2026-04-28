@@ -17,9 +17,7 @@ export default function Login() {
       const formData = new FormData();
       formData.append('username', email);
       formData.append('password', password);
-      const res = await api.post('/auth/login', formData, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
+      const res = await api.post('/auth/login', formData);
       localStorage.setItem('token', res.data.access_token);
       // Fetch user profile and cache it
       try {
