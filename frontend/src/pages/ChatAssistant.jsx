@@ -154,18 +154,25 @@ export default function ChatAssistant() {
   // ── File upload ──────────────────────────────────────────────────────────
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      console.warn('No file selected');
+      return;
+    }
+
+    console.log('File selected:', file.name, file.type, file.size, 'bytes');
 
     // Create session if needed
     if (!sessionId) {
       try {
+        console.log('Creating new session...');
         const r = await api.post('/chat/sessions', { title: 'New Analysis' });
+        console.log('Session created:', r.data.id);
         setSessionId(r.data.id);
       } catch (err) {
-        console.error('Failed to create session', err);
+        console.error('Failed to create session:', err.response?.data || err.message);
         setActiveDocuments(prev => [...prev, {
           id: `tmp-${Date.now()}`, name: file.name, status: 'failed',
-          processing_message: 'Failed to create session.',
+          processing_message: `Failed to create session: ${err.response?.data?.detail || err.message}`,
         }]);
         return;
       }
@@ -180,17 +187,24 @@ export default function ChatAssistant() {
     try {
       const fd = new FormData();
       fd.append('file', file);
+      console.log('Uploading file to session', sessionId);
       const r = await api.post(`/chat/sessions/${sessionId}/files`, fd);
+      console.log('Upload successful:', r.data);
       setActiveDocuments(prev =>
-        prev.map(d => d.id === tmpId ? { ...d, ...r.data, name: file.name } : d)
+        prev.map(d => d.id === tmpId ? { ...d, ...r.data, name: file.name, status: 'uploaded' } : d)
       );
     } catch (err) {
-      console.error('File upload error:', err.response?.data || err.message);
+      const errorDetail = err.response?.data?.detail || err.message;
+      console.error('File upload failed:', {
+        status: err.response?.status,
+        detail: errorDetail,
+        fullError: err,
+      });
       setActiveDocuments(prev =>
         prev.map(d => d.id === tmpId
           ? {
               ...d, status: 'failed',
-              processing_message: err.response?.data?.detail || 'Upload failed.'
+              processing_message: `Upload failed: ${errorDetail}`
             } : d)
       );
     }
