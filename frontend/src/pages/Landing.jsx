@@ -56,7 +56,7 @@ export default function Landing() {
             { icon: 'history_edu', label: 'Fully Auditable', value: 'Yes' },
           ].map((item) => (
             <div key={item.label} className="text-center">
-              <span className="material-symbols-outlined text-primary text-4xl block mb-3 justify-center flex">
+              <span className="material-symbols-outlined text-primary text-4xl flex justify-center mb-3">
                 {item.icon}
               </span>
               <p className="text-sm text-slate-500 mb-1">{item.label}</p>
@@ -243,12 +243,128 @@ export default function Landing() {
               { title: 'Credit Analysis', icon: 'credit_score' },
             ].map((item) => (
               <div key={item.title} className="p-6 bg-white border border-slate-200 rounded-lg text-center hover:border-primary hover:shadow-lg transition-all">
-                <span className="material-symbols-outlined text-primary text-4xl block mb-3 justify-center flex">
+                <span className="material-symbols-outlined text-primary text-4xl flex justify-center mb-3">
                   {item.icon}
                 </span>
                 <h3 className="font-semibold text-slate-900">{item.title}</h3>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Deployment Section */}
+      <section className="py-20 px-6 bg-slate-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl font-bold font-public-sans text-slate-900 mb-4 text-center">
+            Enterprise Deployment Options
+          </h2>
+          <p className="text-slate-600 text-center mb-16 max-w-2xl mx-auto">
+            Choose the deployment model that best fits your organization's security and infrastructure needs
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Cloud Demo */}
+            <div className="bg-white border-2 border-secondary rounded-lg p-8 hover:shadow-lg transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="material-symbols-outlined text-secondary text-4xl">cloud</span>
+                <h3 className="text-2xl font-bold text-slate-900">Cloud Demo</h3>
+              </div>
+              <p className="text-slate-600 mb-6">
+                Quick evaluation and testing without infrastructure setup
+              </p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary text-[20px]">check</span>
+                  <span className="text-slate-700">Instant access</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary text-[20px]">check</span>
+                  <span className="text-slate-700">No setup required</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary text-[20px]">check</span>
+                  <span className="text-slate-700">Free trial available</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-secondary text-[20px]">check</span>
+                  <span className="text-slate-700">Full feature access</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full px-6 py-3 bg-secondary text-white rounded font-semibold hover:opacity-90 transition-opacity">
+                Try Demo Now
+              </button>
+            </div>
+
+            {/* On-Premises Deployment */}
+            <div className="bg-white border-2 border-primary rounded-lg p-8 hover:shadow-lg transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="material-symbols-outlined text-primary text-4xl">security</span>
+                <h3 className="text-2xl font-bold text-slate-900">On-Premises</h3>
+              </div>
+              <p className="text-slate-600 mb-6">
+                Complete control with isolated, air-gapped deployment in your data center
+              </p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[20px]">check</span>
+                  <span className="text-slate-700">Full data control</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[20px]">check</span>
+                  <span className="text-slate-700">Air-gapped deployment</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[20px]">check</span>
+                  <span className="text-slate-700">Compliance certified</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-primary text-[20px]">check</span>
+                  <span className="text-slate-700">Dedicated support</span>
+                </li>
+              </ul>
+              <button
+                className="w-full px-6 py-3 bg-primary text-white rounded font-semibold hover:opacity-90 transition-opacity">
+                Download Bundle
+              </button>
+            </div>
+          </div>
+
+          {/* Deployment Specs */}
+          <div className="mt-16 bg-white border border-slate-200 rounded-lg p-8">
+            <h3 className="text-2xl font-bold text-slate-900 mb-8 text-center">
+              Enterprise Deployment Requirements
+            </h3>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  label: 'Minimum Hardware',
+                  items: ['8+ CPU cores', '32 GB RAM', '500 GB SSD', 'GPU optional']
+                },
+                {
+                  label: 'Infrastructure',
+                  items: ['Docker 20.10+', 'Linux (Ubuntu/RHEL)', 'Network connectivity', 'SSL/TLS ready']
+                },
+                {
+                  label: 'Deployment Time',
+                  items: ['30-60 minutes', 'Automated setup', 'Pre-loaded models', 'Single script']
+                }
+              ].map((spec) => (
+                <div key={spec.label} className="border-l-4 border-primary pl-6">
+                  <h4 className="font-bold text-slate-900 mb-3">{spec.label}</h4>
+                  <ul className="space-y-2 text-sm text-slate-600">
+                    {spec.items.map((item) => (
+                      <li key={item} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -261,6 +377,7 @@ export default function Landing() {
           </h2>
           <p className="text-xl mb-10 text-on-primary-container opacity-90">
             Experience the power of AI-driven financial document intelligence with enterprise-grade security.
+            Deploy in the cloud for instant access, or on-premises for complete control.
           </p>
           <button
             onClick={() => navigate('/login')}
