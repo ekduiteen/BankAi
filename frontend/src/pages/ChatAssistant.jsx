@@ -421,7 +421,10 @@ export default function ChatAssistant() {
                 {activeDocuments.map(d => (
                   <FilePreviewCard key={d.id} file={d} onRemove={doc => setActiveDocuments(prev => prev.filter(x => x.id !== doc.id))} />
                 ))}
-                <button onClick={() => fileRef.current?.click()}
+                <button onClick={() => {
+                  console.log('Add reference document button clicked, fileRef:', fileRef.current);
+                  fileRef.current?.click();
+                }}
                   className="p-3 bg-white border-2 border-dashed border-slate-200 rounded flex items-center justify-center gap-2 cursor-pointer hover:border-secondary transition-colors text-slate-400 hover:text-secondary text-body-sm font-medium">
                   <span className="material-symbols-outlined">add_circle</span>
                   Add reference document
@@ -430,7 +433,10 @@ export default function ChatAssistant() {
             )}
 
             <div className="relative">
-              <button type="button" onClick={() => fileRef.current?.click()}
+              <button type="button" onClick={() => {
+                console.log('Attachment button clicked, fileRef:', fileRef.current);
+                fileRef.current?.click();
+              }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors p-1"
                 disabled={isLoading}>
                 <span className="material-symbols-outlined text-[22px]">attachment</span>
