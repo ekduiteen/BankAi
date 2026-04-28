@@ -57,12 +57,12 @@ export default function FilePreviewCard({ file, onRemove }) {
   }, [file.id, isDone, isFailed]);
 
   return (
-    <div className="relative flex items-center p-3 bg-white border border-slate-200 rounded group hover:border-secondary transition-colors">
+    <div className="relative flex items-center p-3 bg-white border border-slate-200 rounded group hover:border-secondary transition-colors" data-testid="file-preview-card">
       <div className={`w-10 h-10 rounded flex items-center justify-center flex-shrink-0 mr-3 ${typeInfo.bg}`}>
         <span className="material-symbols-outlined text-[20px]">{typeInfo.icon}</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-on-surface truncate">{fileName}</p>
+        <p className="text-sm font-semibold text-on-surface truncate" data-testid="document-label">{fileName}</p>
         {isDone ? (
           <div className="flex items-center gap-1 mt-0.5 text-[11px] text-on-tertiary-container font-bold">
             <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>

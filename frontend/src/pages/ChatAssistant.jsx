@@ -400,8 +400,9 @@ export default function ChatAssistant() {
                 disabled={isLoading}>
                 <span className="material-symbols-outlined text-[22px]">attachment</span>
               </button>
-              <input type="file" ref={fileRef} onChange={handleFileSelect} className="hidden" accept={FILE_ACCEPT} />
+              <input type="file" ref={fileRef} onChange={handleFileSelect} className="hidden" accept={FILE_ACCEPT} data-testid="file-upload" />
               <textarea
+                data-testid="chat-input"
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => {
@@ -515,15 +516,15 @@ function MsgBubble({ msg, idx, isLast, isLoading, editingId, editText, setEditTe
         ) : (
           <div className={isUser ? 'bg-white border border-slate-200 rounded shadow-card p-4' : 'space-y-3'}>
             {isUser
-              ? <p className="text-body-sm text-on-surface leading-relaxed">{msg.content}</p>
-              : <div className="text-body-sm text-on-surface">{renderMarkdown(msg.content)}</div>
+              ? <p className="text-body-sm text-on-surface leading-relaxed" data-testid="message-content">{msg.content}</p>
+              : <div className="text-body-sm text-on-surface" data-testid="message-content">{renderMarkdown(msg.content)}</div>
             }
 
             {/* Source chips */}
             {!isUser && msg.sources && msg.sources.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {msg.sources.map((s, i) => (
-                  <span key={i} title={s.snippet}
+                  <span key={i} title={s.snippet} data-testid="source-card"
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded text-[11px] font-medium text-slate-600">
                     <span className="material-symbols-outlined text-[13px] text-secondary">description</span>
                     {s.document_title || s.title || 'Source'}
