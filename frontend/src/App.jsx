@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ChatAssistant from './pages/ChatAssistant';
@@ -13,14 +14,23 @@ import AdminSecurity from './pages/AdminSecurity';
 import ComplianceRisk from './pages/ComplianceRisk';
 import MainLayout from './layouts/MainLayout';
 
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  return token ? children : <Navigate to="/login" replace />;
+};
+
 function App() {
+  const isAuthenticated = !!localStorage.getItem('token');
+
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        {/* Public routes */}
+        <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
 
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+        {/* Protected routes */}
+        <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
           <Route path="dashboard"   element={<Dashboard />} />
           <Route path="chat"        element={<ChatAssistant />} />
           <Route path="documents"   element={<Documents />} />
