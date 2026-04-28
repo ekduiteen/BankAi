@@ -292,7 +292,7 @@ export default function Landing() {
                 { label: 'COMPUTE', value: 'NVIDIA L40S', desc: 'Next-gen AI processing unit' },
                 { label: 'MEMORY', value: '128GB DDR5', desc: 'High-speed system RAM' },
                 { label: 'STORAGE', value: '4TB NVMe Gen5', desc: 'Enterprise-grade SSD arrays' },
-                { label: 'MODEL', value: 'Gemma 2B/7B', desc: 'Quantized local inference' }
+                { label: 'MODEL', value: 'Bank\'s Own Finetuned LLM', desc: 'Quantized local inference' }
               ].map((spec) => (
                 <div key={spec.label} className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                   <p className="font-label-caps text-secondary mb-2">{spec.label}</p>
