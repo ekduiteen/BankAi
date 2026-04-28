@@ -23,7 +23,7 @@ export default function TopBar({ language, onLanguageChange }) {
       {/* Left: wordmark + top nav */}
       <div className="flex items-center gap-8">
         <span className="text-xl font-bold tracking-tighter text-slate-900 font-public-sans">
-          Vault AI
+          BankAi
         </span>
         <nav className="hidden lg:flex items-center h-16">
           {TOP_NAV.map(({ label, to }) => (

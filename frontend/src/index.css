@@ -14,10 +14,15 @@
 
   /* Material Symbols icon font */
   .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-feature-settings: 'liga';
     display: inline-block;
     vertical-align: middle;
     user-select: none;
+    font-size: inherit;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* Slim scrollbar */
