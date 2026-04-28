@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>User Roles &amp; Permissions | FinSecure AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-tint": "#565e74",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-primary-fixed": "#131b2e",
+                        "surface": "#f8f9ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#dce9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#6ffbbe",
+                        "secondary": "#0051d5",
+                        "on-surface": "#0b1c30",
+                        "on-secondary-fixed": "#00174b",
+                        "on-background": "#0b1c30",
+                        "primary-fixed-dim": "#bec6e0",
+                        "on-surface-variant": "#45464d",
+                        "on-secondary-container": "#fefcff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "error": "#ba1a1a",
+                        "outline": "#76777d",
+                        "surface-container": "#e5eeff",
+                        "on-tertiary-fixed": "#002113",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "tertiary": "#000000",
+                        "tertiary-container": "#002113",
+                        "primary": "#000000",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline-variant": "#c6c6cd",
+                        "secondary-container": "#316bf3",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-container": "#009668",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#7c839b",
+                        "inverse-primary": "#bec6e0",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "primary-container": "#131b2e",
+                        "primary-fixed": "#dae2fd",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "surface-variant": "#d3e4fe"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "xl": "48px",
+                        "lg": "24px",
+                        "gutter": "24px",
+                        "md": "16px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "h2": ["Public Sans"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "h1": ["Public Sans"],
+                        "body-lg": ["Inter"],
+                        "nepali-supplement": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h1": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "nepali-supplement": ["110%", {"lineHeight": "1.8"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<header class="flex justify-between items-center h-16 px-12 w-full sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flat no shadows">
+<div class="flex items-center gap-xl">
+<span class="text-lg font-bold text-slate-900 dark:text-slate-50 tracking-tight font-public-sans">FinSecure AI</span>
+<nav class="hidden md:flex items-center gap-lg">
+<a class="font-public-sans text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors cursor-pointer active:opacity-80" href="#">Dashboard</a>
+<a class="font-public-sans text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-50 transition-colors cursor-pointer active:opacity-80" href="#">Reports</a>
+<a class="font-public-sans text-sm font-medium text-slate-900 dark:text-slate-50 border-b-2 border-slate-900 dark:border-slate-50 pb-1 cursor-pointer active:opacity-80" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-slate-900 dark:text-slate-50 cursor-pointer">translate</button>
+<button class="material-symbols-outlined text-slate-900 dark:text-slate-50 cursor-pointer">notifications</button>
+<button class="material-symbols-outlined text-slate-900 dark:text-slate-50 cursor-pointer">account_circle</button>
+</div>
+</header>
+<div class="flex">
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 flex flex-col py-6 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 transition-all">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-sm" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h3 class="text-xl font-black text-slate-900 dark:text-slate-100 font-public-sans leading-none">Enterprise Suite</h3>
+<p class="font-label-caps text-[10px] text-slate-500 uppercase tracking-widest mt-1">Institutional Banking</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="px-4 mb-2">
+<p class="font-label-caps text-on-surface-variant px-2 pb-2">Primary Access</p>
+<a class="flex items-center gap-md px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all rounded duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">gavel</span>
+<span class="font-public-sans text-xs uppercase tracking-wider font-semibold">Compliance Risk</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all rounded duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">history_edu</span>
+<span class="font-public-sans text-xs uppercase tracking-wider font-semibold">Audit Forensics</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 border-l-4 border-slate-900 dark:border-slate-400 font-bold transition-all rounded-r duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+<span class="font-public-sans text-xs uppercase tracking-wider font-semibold">Access Control</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all rounded duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="font-public-sans text-xs uppercase tracking-wider font-semibold">Document Library</span>
+</a>
+<a class="flex items-center gap-md px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all rounded duration-150 ease-in-out" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+<span class="font-public-sans text-xs uppercase tracking-wider font-semibold">AI Insights</span>
+</a>
+</div>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full bg-primary text-white py-3 rounded font-label-caps text-xs tracking-widest hover:opacity-90 transition-opacity">New Assessment</button>
+<div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-2">
+<a class="flex items-center gap-md text-slate-600 hover:text-primary dark:text-slate-400 transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">help_outline</span>
+<span class="font-label-caps text-[10px] uppercase">Support</span>
+</a>
+<a class="flex items-center gap-md text-slate-600 hover:text-primary dark:text-slate-400 transition-colors" href="#">
+<span class="material-symbols-outlined text-[18px]">menu_book</span>
+<span class="font-label-caps text-[10px] uppercase">Documentation</span>
+</a>
+</div>
+</div>
+</aside>
+<main class="ml-64 w-full min-h-screen p-xl bg-surface">
+<header class="mb-lg flex justify-between items-end">
+<div>
+<h1 class="font-h1 text-h1 text-on-surface">Roles &amp; Permissions</h1>
+<p class="font-body-md text-on-surface-variant mt-sm">Manage institutional access hierarchy and granular security protocols.</p>
+</div>
+<div class="flex gap-md">
+<button class="px-md py-sm border border-slate-300 rounded font-label-caps text-on-surface hover:bg-white transition-colors">Export Logs</button>
+<button class="px-md py-sm bg-primary text-white rounded font-label-caps flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                        Create New Role
+                    </button>
+</div>
+</header>
+<div class="grid grid-cols-12 gap-gutter">
+<section class="col-span-4 space-y-md">
+<h3 class="font-label-caps text-on-surface-variant mb-md">Defined Roles</h3>
+<div class="bg-white border-l-4 border-secondary p-md border border-slate-200 transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-h2 text-body-md font-bold">Compliance Officer</h4>
+<span class="bg-green-100 text-green-800 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Active</span>
+</div>
+<p class="font-body-sm text-on-surface-variant">Oversees regulatory adherence and policy implementation.</p>
+<div class="mt-md flex -space-x-2">
+<img alt="User" class="w-6 h-6 rounded-full border-2 border-white" data-alt="professional woman in corporate attire smiling in studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi-2Ep-mMVa5-qD3NRYRh3Db_jE9wWndZrb2QtDhi6OGMKW1kha77-lLa0kwNGIn-aJqYyrBJb9vtxGV1U89RctbJxvPeW0NY8_I-NtiIFUnXKx7VXnZNzEjo1IyFG0oNRk9r4Dt46ynXvp6xvhokYn1CuhgR2WEDshcVA2ADh6g_iuaxAlN9Zmb3BBY6B8LInny8s8ji3z9DXl-C-FoJyHou3119dau5m6NjPQhvFkLvm7jiV4VKI9ym-Zk1NVD3-_Dl1Py8LIg"/>
+<img alt="User" class="w-6 h-6 rounded-full border-2 border-white" data-alt="professional man in business suit with neutral expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxsK0MSHhtOx40JDTM6Pu0X8Jhyv4WM6xRkT51CQ3dZsh9pWLggL5Efbpr7NlalxMGw93xfh7loAzzzgjgcye2pwLSO2fOi3sH5BfY2WS0bAj20r618LK62qbbf_GQolvd4Q-yXhg2-ARPd7_NJP8LNMITe23a_j4wNHSFwRueWPQLRn0N2otJl8UiAOAU_YkP03W10fIXlUAORZnch60La_sqPhTVJ6l8Ttt4JQhVI-h3X1OFV5NUjDuJdPG3kezmPsBAr3X8nQ"/>
+<div class="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold">+4</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-md border border-slate-200 hover:bg-white transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-h2 text-body-md font-bold">Data Auditor</h4>
+</div>
+<p class="font-body-sm text-on-surface-variant">Analyzes historical transaction logs for anomaly detection.</p>
+<div class="mt-md flex -space-x-2">
+<img alt="User" class="w-6 h-6 rounded-full border-2 border-white" data-alt="corporate male headshot with natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIAYxYHqp3RvYEZRzlzCCZh3Ls75Fb7aax2KmWiJ5rk5_Ny_0LTYYRMM8zfL5TPKMYQlPfXkiztFUyPjPAKm6H3CJVTgrN5oehUlnKFOUsI2jEV30HQndYuGFDpGRFqrYoMsTBpzKNYgnq7J3arIJoN280ZRRMrhGsE0ysUmyCj87GYxzRtAs4PNgTfeyhW32j5sbtSfH879G7v69c9Qmca7EASkyhQykQHOiMR41cRLtHQxXkYU8ztF5_tjN95y8EeOFrOOEmew"/>
+<div class="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold">+12</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-md border border-slate-200 hover:bg-white transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-h2 text-body-md font-bold">General Staff</h4>
+</div>
+<p class="font-body-sm text-on-surface-variant">Standard access to operational banking modules.</p>
+<div class="mt-md flex -space-x-2">
+<img alt="User" class="w-6 h-6 rounded-full border-2 border-white" data-alt="professional female worker in bright office" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAK9bUnO9tEBw3IfjnHbEhRd_g7TssTFD7qMc5ThCKZ3fkJuDC6JlgTSJ6BSydg3SMmDZ4Q6_VKxyANYvsU3DYH5_wLak8ijPPixL7JGI1eJRcbw_BhyEoLufbM26nJcjDrwK7p_7f0Z7V2sSG4-Zso1lq_yoYHh3tDziu9pLPWt7N_Xr0THXMcE__7HAP37iwtwq6ojaMBUXd0OcTDC2Clx9qdGWOll-vOzYJJ2szHLhpHarfhJrFVHwoSYAheyKRH8U7qvvmfJQ"/>
+<div class="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[10px] font-bold">+85</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-md border border-slate-200 hover:bg-white transition-all cursor-pointer">
+<div class="flex justify-between items-start mb-xs">
+<h4 class="font-h2 text-body-md font-bold">Super Admin</h4>
+</div>
+<p class="font-body-sm text-on-surface-variant">Unrestricted root access to all system modules.</p>
+<div class="mt-md flex -space-x-2">
+<img alt="User" class="w-6 h-6 rounded-full border-2 border-white" data-alt="middle aged executive male in corporate environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4ZLexJuK_ILZF_sbAzS9zJ2JcKBdIefDeaudVpVDqUzncCF0mLt97eSeWm8LrNwKOuIhgMr7I0UgJ_tNCB8yXAqNhhj9Z8i4Jpd45tnJr5kDOCUfeLrR-wMWBLHG9B0CB1KbCVuEBSt--iZep_YG3rb1D47TD-98v4aPFsMWlNoYqknZJUlrEY8ns2FFTsgma69TLsa3g6Yv12qbDEukXu7-33BbVchqocnStdQZf3mkGpmNx5_seE-Hhgsr2dRYMuDVVosjFOg"/>
+</div>
+</div>
+</section>
+<section class="col-span-8 flex flex-col gap-gutter">
+<div class="bg-white border border-slate-200 p-lg shadow-sm">
+<div class="flex justify-between items-center mb-lg border-b border-slate-100 pb-md">
+<div>
+<h3 class="font-h2 text-h2">Permissions Configuration</h3>
+<p class="font-body-sm text-on-surface-variant">Modifying <span class="font-bold text-on-surface">Compliance Officer</span> role</p>
+</div>
+<div class="flex items-center gap-md">
+<span class="font-label-caps text-on-surface-variant">Confidence Score: <span class="text-on-tertiary-container bg-tertiary-fixed-dim px-2 py-0.5 rounded">98% Secure</span></span>
+</div>
+</div>
+<div class="space-y-sm">
+<div class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-xs px-2">Data Privacy &amp; Assets</div>
+<div class="flex items-center justify-between p-md bg-slate-50 border border-slate-100">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary">visibility</span>
+<div>
+<p class="font-body-md font-semibold">View PII (Personal Identifiable Information)</p>
+<p class="font-body-sm text-on-surface-variant text-xs">Allow viewing of full customer identity data.</p>
+</div>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<div class="w-11 h-6 bg-secondary rounded-full"></div>
+<div class="absolute left-6 top-1 bg-white w-4 h-4 rounded-full transition-all"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-md bg-white border border-slate-100">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-slate-400">file_download</span>
+<div>
+<p class="font-body-md font-semibold">Export Large Datasets</p>
+<p class="font-body-sm text-on-surface-variant text-xs">Permit bulk export of historical financial records.</p>
+</div>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<div class="w-11 h-6 bg-slate-200 rounded-full"></div>
+<div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-all"></div>
+</div>
+</div>
+<div class="font-label-caps text-[10px] text-on-surface-variant uppercase mt-lg mb-xs px-2">System Governance</div>
+<div class="flex items-center justify-between p-md bg-slate-50 border border-slate-100">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary">settings_suggest</span>
+<div>
+<p class="font-body-md font-semibold">Modify Security Protocols</p>
+<p class="font-body-sm text-on-surface-variant text-xs">Adjust internal firewall and AI audit parameters.</p>
+</div>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<div class="w-11 h-6 bg-secondary rounded-full"></div>
+<div class="absolute left-6 top-1 bg-white w-4 h-4 rounded-full transition-all"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-md bg-slate-50 border border-slate-100">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary">gavel</span>
+<div>
+<p class="font-body-md font-semibold">Approve Audit Reports</p>
+<p class="font-body-sm text-on-surface-variant text-xs">Final sign-off authority for quarterly compliance logs.</p>
+</div>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<div class="w-11 h-6 bg-secondary rounded-full"></div>
+<div class="absolute left-6 top-1 bg-white w-4 h-4 rounded-full transition-all"></div>
+</div>
+</div>
+</div>
+<div class="mt-xl flex justify-end gap-md pt-lg border-t border-slate-100">
+<button class="px-lg py-sm font-label-caps text-on-surface-variant hover:text-on-surface">Discard Changes</button>
+<button class="px-xl py-sm bg-primary text-white rounded font-label-caps">Apply Secure Update</button>
+</div>
+</div>
+<div class="bg-white border border-slate-200 p-lg shadow-sm">
+<h3 class="font-h2 text-body-lg font-bold mb-md">User Assignment</h3>
+<div class="overflow-hidden border border-slate-100 rounded">
+<table class="w-full text-left">
+<thead class="bg-primary-container text-on-primary font-label-caps text-[10px]">
+<tr>
+<th class="px-md py-sm">Employee Name</th>
+<th class="px-md py-sm">Email Address</th>
+<th class="px-md py-sm">Current Role</th>
+<th class="px-md py-sm">Last Active</th>
+<th class="px-md py-sm text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-body-sm divide-y divide-slate-50">
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-md py-md flex items-center gap-sm">
+<img alt="Avatar" class="w-8 h-8 rounded" data-alt="professional business woman headshot in studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDieDS39kpTPrf3V0f-o70EyHpP12g8uC18LIEvZNu-slWxfXjiJ2a2AHMwKDlry_eBWexTmD-T-V_CGitvOH2n1cgC5BYi30sZYNNWI3KgD_fpXh0keUzaKGgNQ-_EmCZAKe0Nn0lvlRHFdlDRZ2_ELi4No85T2yiqtTqNSR9m4EujDI8ohh_pfQ_PaNXyOqYMntsfxeDI345kcXsrjjgSxDW7nWbX7MB26-oqh_IysghGM236N0v9sAnPJJ3ijSYCUsNeM9Dag"/>
+<span class="font-semibold">Sarah Jenkins</span>
+</td>
+<td class="px-md py-md text-slate-500">s.jenkins@bankai.com</td>
+<td class="px-md py-md">
+<span class="bg-surface-container-high px-2 py-1 rounded text-xs font-medium">Compliance Officer</span>
+</td>
+<td class="px-md py-md text-slate-500">2 mins ago</td>
+<td class="px-md py-md text-right">
+<button class="material-symbols-outlined text-slate-400 hover:text-primary">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-md py-md flex items-center gap-sm">
+<img alt="Avatar" class="w-8 h-8 rounded" data-alt="professional male business headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBL5_LxgkW0d9TttK59rFxiVaaDjDPbLhXh6JzOPOGT6l_fYoDLz_rLZbsM2mUu8oPQ6_ucuz6qerxvpJb4wLUZO-rKbu-hXvgtrmoGG_s6u7_yVP-4Q76h3k2YLugkYZLyltUPPOHOcPWBeGVjfKZkqq6m1-Ck13zw6r4_HauZZm1W2OVNu19S3CZMMhHP_ERH08HyscX6eZ9CRtpgyfWSJqJF6N-NZ_1y97rxnPkMRc-pagwJdCMLutzG8ugYVNNOYs5SF7721w"/>
+<span class="font-semibold">Marcus Thorne</span>
+</td>
+<td class="px-md py-md text-slate-500">m.thorne@bankai.com</td>
+<td class="px-md py-md">
+<span class="bg-surface-container-high px-2 py-1 rounded text-xs font-medium">Compliance Officer</span>
+</td>
+<td class="px-md py-md text-slate-500">Yesterday</td>
+<td class="px-md py-md text-right">
+<button class="material-symbols-outlined text-slate-400 hover:text-primary">more_vert</button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-md py-md flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-slate-200 flex items-center justify-center font-bold text-slate-500">EL</div>
+<span class="font-semibold">Elena Lu</span>
+</td>
+<td class="px-md py-md text-slate-500">e.lu@bankai.com</td>
+<td class="px-md py-md">
+<span class="bg-surface-container-low px-2 py-1 rounded text-xs font-medium text-slate-600">Data Auditor</span>
+</td>
+<td class="px-md py-md text-slate-500">3 days ago</td>
+<td class="px-md py-md text-right">
+<button class="material-symbols-outlined text-slate-400 hover:text-primary">more_vert</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-md flex justify-center">
+<button class="text-secondary font-label-caps text-xs flex items-center gap-xs hover:underline">
+                                View All 102 Members
+                                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

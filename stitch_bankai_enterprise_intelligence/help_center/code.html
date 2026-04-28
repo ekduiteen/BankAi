@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Support - BankAi Enterprise Suite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;900&amp;family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#000000",
+                        "primary": "#000000",
+                        "outline-variant": "#c6c6cd",
+                        "surface-variant": "#d3e4fe",
+                        "surface-tint": "#565e74",
+                        "on-tertiary-container": "#009668",
+                        "on-primary-container": "#7c839b",
+                        "surface-container": "#e5eeff",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-tertiary-fixed": "#002113",
+                        "background": "#f8f9ff",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "secondary": "#0051d5",
+                        "surface-container-low": "#eff4ff",
+                        "on-surface": "#0b1c30",
+                        "surface-container-high": "#dce9ff",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "surface-bright": "#f8f9ff",
+                        "primary-fixed-dim": "#bec6e0",
+                        "error": "#ba1a1a",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "primary-container": "#131b2e",
+                        "tertiary-container": "#002113",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#131b2e",
+                        "surface": "#f8f9ff",
+                        "tertiary-fixed": "#6ffbbe",
+                        "primary-fixed": "#dae2fd",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#d3e4fe",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#316bf3",
+                        "inverse-primary": "#bec6e0",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline": "#76777d",
+                        "surface-dim": "#cbdbf5",
+                        "on-secondary-container": "#fefcff",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-background": "#0b1c30",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#45464d",
+                        "on-secondary-fixed": "#00174b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-max": "1440px",
+                        "xl": "48px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "gutter": "24px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Inter"],
+                        "nepali-supplement": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "h2": ["Public Sans"],
+                        "body-lg": ["Inter"],
+                        "h1": ["Public Sans"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "nepali-supplement": ["110%", {"lineHeight": "1.8"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "h1": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- SideNavBar (Authority Source: JSON) -->
+<aside class="flex flex-col fixed left-0 top-0 h-full z-50 bg-white dark:bg-slate-900 h-screen w-64 border-r border-slate-200 dark:border-slate-800 font-['Public_Sans'] text-sm font-medium">
+<div class="px-6 py-8 flex flex-col gap-2">
+<span class="text-lg font-black text-slate-900 dark:text-slate-50">BankAi</span>
+<span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Enterprise Suite</span>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 transition-all scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>Session History</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 transition-all scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-50 border-l-4 border-slate-900 dark:border-slate-400 transition-all scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="help_center">help_center</span>
+<span>Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 transition-all scale-98" href="#">
+<span class="material-symbols-outlined" data-icon="settings_applications">settings_applications</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="p-4 bg-slate-50 mx-4 mb-8 rounded border border-slate-200">
+<button class="w-full bg-primary text-white py-2 px-4 rounded text-xs font-bold hover:opacity-90 transition-opacity">
+                New Analysis
+            </button>
+</div>
+<div class="mt-auto border-t border-slate-200 p-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 hover:text-error" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen">
+<!-- TopAppBar (Authority Source: JSON) -->
+<header class="flex justify-between items-center px-8 h-16 w-full sticky top-0 z-40 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 font-['Public_Sans'] antialiased tracking-tight">
+<div class="flex items-center gap-6">
+<h1 class="text-xl font-bold text-slate-900 dark:text-slate-50">Help Center</h1>
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" data-icon="search">search</span>
+<input class="w-full pl-10 pr-4 py-1.5 bg-slate-100 border-none rounded text-sm focus:ring-2 focus:ring-secondary/20 transition-all" placeholder="Search knowledge base..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-100 transition-colors rounded">
+<span class="material-symbols-outlined" data-icon="language">language</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-100 transition-colors rounded relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="flex items-center gap-2 pl-4 border-l border-slate-200">
+<span class="material-symbols-outlined text-slate-700" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<div class="p-xl max-w-container-max mx-auto">
+<!-- Hero Section -->
+<section class="mb-xl relative overflow-hidden rounded bg-primary p-12 text-white">
+<div class="relative z-10 max-w-2xl">
+<p class="font-label-caps text-label-caps text-on-primary-container mb-4">BANKAI SUPPORT PORTAL</p>
+<h2 class="font-h1 text-h1 mb-6">How can we assist your audit today?</h2>
+<p class="font-body-lg text-body-lg text-slate-400 mb-8">Access professional guidance on AI document extraction, regulatory compliance modules, and enterprise-grade data security.</p>
+<div class="flex gap-4">
+<button class="bg-secondary text-white px-6 py-3 rounded font-bold hover:bg-secondary/90 transition-all">
+                            Open Support Ticket
+                        </button>
+<button class="border border-slate-700 px-6 py-3 rounded font-bold hover:bg-white/5 transition-all">
+                            Documentation API
+                        </button>
+</div>
+</div>
+<div class="absolute right-0 top-0 h-full w-1/3 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at center, #316bf3 0%, transparent 70%);">
+<img class="w-full h-full object-cover mix-blend-overlay" data-alt="Futuristic glowing microchip circuit board patterns in deep blue and black tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAq7EO-naT18LVO4fn1JkECw6mtnghRwMcTvgL8NAp6H_fFmIw6AYj8SvQUoVEOH6wO4JqJJwNPSt1qJsbgP6eTL76SqO3QIkcildPu9i2xHbX_dARkvD0LHrT6_WjeUJhNhZi_SCfISxlB0Figt0SM6n2wDSVNlojo3B_K2p4vIYEciVRT3WUYfWBNDU0pKMmHNc4JTdC6IyYLGE8yVW_8Bx8vmYWwhJ9V71L9hdbxfYAhrnQXNkVLCmLL406qLJXoY2M9EVshAw"/>
+</div>
+</section>
+<!-- Knowledge Base Categories Bento -->
+<section class="bento-grid mb-xl">
+<!-- Getting Started -->
+<div class="col-span-12 md:col-span-4 bg-white border border-slate-200 p-lg hover:border-secondary transition-colors cursor-pointer group flex flex-col justify-between">
+<div>
+<div class="w-12 h-12 bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-slate-100 transition-colors">
+<span class="material-symbols-outlined text-secondary" data-icon="rocket_launch">rocket_launch</span>
+</div>
+<h3 class="font-h2 text-h2 mb-2">Getting Started</h3>
+<p class="text-slate-500 font-body-sm text-body-sm">Master the fundamentals of AI document processing and account configuration.</p>
+</div>
+<div class="mt-8 flex items-center text-secondary font-bold text-sm gap-2">
+                        12 Articles <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<!-- Security & Privacy -->
+<div class="col-span-12 md:col-span-8 bg-white border border-slate-200 p-lg hover:border-secondary transition-colors cursor-pointer group flex gap-8">
+<div class="flex-1">
+<div class="w-12 h-12 bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-slate-100 transition-colors">
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="verified_user">verified_user</span>
+</div>
+<h3 class="font-h2 text-h2 mb-2">Security &amp; Privacy</h3>
+<p class="text-slate-500 font-body-sm text-body-sm mb-4">Detailed protocols on our zero-knowledge architecture, data encryption standards, and GDPR/SOC2 compliance guidelines.</p>
+<div class="grid grid-cols-2 gap-4 mt-6">
+<div class="flex items-center gap-2 text-sm text-slate-700">
+<span class="w-1.5 h-1.5 bg-on-tertiary-container rounded-full"></span> Multi-factor Auth
+                            </div>
+<div class="flex items-center gap-2 text-sm text-slate-700">
+<span class="w-1.5 h-1.5 bg-on-tertiary-container rounded-full"></span> Data Residency
+                            </div>
+<div class="flex items-center gap-2 text-sm text-slate-700">
+<span class="w-1.5 h-1.5 bg-on-tertiary-container rounded-full"></span> Encryption Keys
+                            </div>
+<div class="flex items-center gap-2 text-sm text-slate-700">
+<span class="w-1.5 h-1.5 bg-on-tertiary-container rounded-full"></span> Audit Logs
+                            </div>
+</div>
+</div>
+<div class="w-1/3 bg-slate-50 rounded-sm overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover opacity-60" data-alt="Close-up of a secure high-tech digital interface with green data encryption symbols" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNKA36eNKl4eKC3fObTSMhF73wdUAsLAlgAsgJ3okHuZVV_G5o8n7SM4jO0n38rmfOtPxr8Nzl2_59c9GrYnhOB0Q49sl7Ld39uY0dET6-0fzVvTLLnqpujSnWSu5gKrEijiSuyKCNO-aOjw7ZMc9K3bXoMnOiYeP2_MVBlz7E2TwX9Jc4YRIWaoMT4vN6RnTLJ_LAsH9WvqT3Fm5E6IP-qjBcuIIbn91e_pcMSwTfpno4gRCPvIsGQ6Qdc--tG41LZ8qKPO-hOQ"/>
+</div>
+</div>
+<!-- Document Analysis Tips -->
+<div class="col-span-12 md:col-span-8 bg-white border border-slate-200 p-lg hover:border-secondary transition-colors cursor-pointer group">
+<div class="w-12 h-12 bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-slate-100 transition-colors">
+<span class="material-symbols-outlined text-secondary" data-icon="psychology">psychology</span>
+</div>
+<h3 class="font-h2 text-h2 mb-2">Document Analysis Tips</h3>
+<p class="text-slate-500 font-body-sm text-body-sm mb-6 max-w-xl">Optimize your OCR accuracy and extraction logic. Learn how to handle low-quality scans and complex financial tables using our proprietary neural models.</p>
+<div class="flex gap-2">
+<span class="px-3 py-1 bg-surface-container text-secondary text-xs font-bold rounded">OCR Guide</span>
+<span class="px-3 py-1 bg-surface-container text-secondary text-xs font-bold rounded">Table Extraction</span>
+<span class="px-3 py-1 bg-surface-container text-secondary text-xs font-bold rounded">Metadata Tagging</span>
+</div>
+</div>
+<!-- Integrations -->
+<div class="col-span-12 md:col-span-4 bg-white border border-slate-200 p-lg hover:border-secondary transition-colors cursor-pointer group">
+<div class="w-12 h-12 bg-slate-50 flex items-center justify-center mb-6 group-hover:bg-slate-100 transition-colors">
+<span class="material-symbols-outlined text-secondary" data-icon="hub">hub</span>
+</div>
+<h3 class="font-h2 text-h2 mb-2">Integrations</h3>
+<p class="text-slate-500 font-body-sm text-body-sm">Connect BankAi to your existing tech stack: SAP, Oracle, and Salesforce.</p>
+<div class="mt-8 flex gap-3 opacity-40">
+<span class="material-symbols-outlined text-2xl" data-icon="cloud_sync">cloud_sync</span>
+<span class="material-symbols-outlined text-2xl" data-icon="database">database</span>
+<span class="material-symbols-outlined text-2xl" data-icon="api">api</span>
+</div>
+</div>
+</section>
+<!-- Bottom Content: Recent Articles & Contact -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Recently Updated Articles -->
+<div class="col-span-12 lg:col-span-8">
+<h4 class="font-label-caps text-label-caps mb-6 text-slate-900 border-b border-slate-100 pb-4">RECENTLY UPDATED ARTICLES</h4>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-white border border-slate-200 hover:shadow-sm transition-shadow rounded-sm cursor-pointer">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400" data-icon="description">description</span>
+<div>
+<h5 class="font-bold text-slate-900">Configuring Webhooks for Real-time Audits</h5>
+<p class="text-xs text-slate-400">Updated 2 hours ago • 5 min read</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-300" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-white border border-slate-200 hover:shadow-sm transition-shadow rounded-sm cursor-pointer">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400" data-icon="security">security</span>
+<div>
+<h5 class="font-bold text-slate-900">Updating your IP Whitelist for Enterprise Firewalls</h5>
+<p class="text-xs text-slate-400">Updated yesterday • 3 min read</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-300" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-white border border-slate-200 hover:shadow-sm transition-shadow rounded-sm cursor-pointer">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400" data-icon="translate">translate</span>
+<div>
+<h5 class="font-bold text-slate-900">Nepali Language Extraction: Best Practices</h5>
+<p class="text-xs text-slate-400">Updated 3 days ago • 8 min read</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-300" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Contact Support Card -->
+<div class="col-span-12 lg:col-span-4">
+<div class="bg-surface-container border-l-4 border-secondary p-lg sticky top-24">
+<h4 class="font-h2 text-h2 mb-4 text-on-surface">Still need help?</h4>
+<p class="text-body-sm text-slate-600 mb-8">Our enterprise support engineers are available 24/7 for Platinum Tier clients. Standard support responds within 2 business hours.</p>
+<div class="space-y-6">
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-secondary" data-icon="chat_bubble_outline">chat_bubble_outline</span>
+<div>
+<p class="font-bold text-sm">Live Chat</p>
+<p class="text-xs text-slate-500">Wait time: ~2 mins</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-secondary" data-icon="mail">mail</span>
+<div>
+<p class="font-bold text-sm">Email Support</p>
+<p class="text-xs text-slate-500">enterprise@bankai.com</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-secondary" data-icon="call">call</span>
+<div>
+<p class="font-bold text-sm">Priority Phone</p>
+<p class="text-xs text-slate-500">+1 (800) BANK-AI-1</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-10 bg-primary text-white font-bold py-3 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                            Contact Support
+                            <span class="material-symbols-outlined text-sm" data-icon="open_in_new">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Stats -->
+<footer class="mt-xl pt-lg border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="flex items-center gap-8">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Uptime</span>
+<span class="text-sm font-bold text-on-tertiary-container">99.98% Operational</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Region</span>
+<span class="text-sm font-bold text-slate-600">US-East-1 (Primary)</span>
+</div>
+</div>
+<div class="flex gap-6 text-xs text-slate-400 font-medium">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Security Disclosure</a>
+</div>
+</footer>
+</div>
+</main>
+</body></html>

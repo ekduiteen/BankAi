@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BankAi - Modern Chat Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#131b2e",
+                    "on-primary": "#ffffff",
+                    "secondary": "#0051d5",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-low": "#eff4ff",
+                    "outline": "#76777d",
+                    "surface-bright": "#f8f9ff",
+                    "tertiary": "#000000",
+                    "inverse-primary": "#bec6e0",
+                    "inverse-surface": "#213145",
+                    "secondary-fixed": "#dbe1ff",
+                    "on-surface-variant": "#45464d",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#009668",
+                    "surface-container": "#e5eeff",
+                    "on-secondary": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed": "#002113",
+                    "primary-container": "#131b2e",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-container": "#7c839b",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "primary-fixed-dim": "#bec6e0",
+                    "inverse-on-surface": "#eaf1ff",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-secondary-fixed-variant": "#003ea8",
+                    "primary-fixed": "#dae2fd",
+                    "background": "#f8f9ff",
+                    "surface-tint": "#565e74",
+                    "on-secondary-container": "#fefcff",
+                    "secondary-fixed-dim": "#b4c5ff",
+                    "primary": "#000000",
+                    "surface-dim": "#cbdbf5",
+                    "outline-variant": "#c6c6cd",
+                    "on-surface": "#0b1c30",
+                    "error": "#ba1a1a",
+                    "on-background": "#0b1c30",
+                    "on-secondary-fixed": "#00174b",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "secondary-container": "#316bf3",
+                    "surface-container-high": "#dce9ff",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#3f465c",
+                    "tertiary-container": "#002113",
+                    "tertiary-fixed": "#6ffbbe"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "gutter": "24px",
+                    "xs": "4px",
+                    "lg": "24px",
+                    "container-max": "1440px",
+                    "sm": "8px",
+                    "xl": "48px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "nepali-supplement": ["Inter"],
+                    "h2": ["Public Sans"],
+                    "h1": ["Public Sans"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "nepali-supplement": ["110%", {"lineHeight": "1.8"}],
+                    "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "h1": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .message-bubble {
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+        .thinking-dot {
+            width: 4px;
+            height: 4px;
+            background: currentColor;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 1px;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface">
+<!-- Sidebar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col p-md gap-sm bg-white border-r border-slate-200 w-64 z-50">
+<div class="mb-xl px-md">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+</div>
+<div>
+<h1 class="font-h2 text-[18px] leading-tight font-black text-slate-900">BankAi</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Financial Intelligence</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-unit">
+<button class="w-full flex items-center gap-md px-md py-sm bg-slate-50 text-slate-900 font-semibold rounded-sm border border-slate-200 shadow-sm transition-all duration-200">
+<span class="material-symbols-outlined text-md">add_box</span>
+<span class="font-['Public_Sans'] text-[13px] tracking-wide">New Analysis</span>
+</button>
+<button class="w-full flex items-center gap-md px-md py-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200">
+<span class="material-symbols-outlined text-md">account_balance_wallet</span>
+<span class="font-['Public_Sans'] text-[13px] tracking-wide">Vault</span>
+</button>
+<button class="w-full flex items-center gap-md px-md py-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200">
+<span class="material-symbols-outlined text-md">gavel</span>
+<span class="font-['Public_Sans'] text-[13px] tracking-wide">Compliance</span>
+</button>
+<button class="w-full flex items-center gap-md px-md py-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all duration-200">
+<span class="material-symbols-outlined text-md">settings</span>
+<span class="font-['Public_Sans'] text-[13px] tracking-wide">Settings</span>
+</button>
+</nav>
+<div class="mt-auto space-y-unit pt-md border-t border-slate-100">
+<button class="w-full flex items-center gap-md px-md py-sm text-slate-500 hover:text-slate-900 transition-all duration-200">
+<span class="material-symbols-outlined text-md">help_outline</span>
+<span class="font-['Public_Sans'] text-[13px] tracking-wide">Support</span>
+</button>
+<button class="w-full flex items-center gap-md px-md py-sm text-slate-500 hover:text-slate-900 transition-all duration-200">
+<span class="material-symbols-outlined text-md">logout</span>
+<span class="font-['Public_Sans'] text-[13px] tracking-wide">Sign Out</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen flex flex-col relative bg-white">
+<!-- TopAppBar (Shared Component Variation) -->
+<header class="flex justify-between items-center w-full px-xl h-16 border-b border-slate-100 bg-white sticky top-0 z-40">
+<div class="flex items-center gap-xl">
+<div class="flex items-center gap-md">
+<span class="font-h2 text-sm font-bold text-slate-900">Dashboard</span>
+<span class="material-symbols-outlined text-slate-300">chevron_right</span>
+<span class="font-h2 text-sm font-medium text-slate-500">Vault AI Analysis</span>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<!-- Bilingual Switcher -->
+<div class="flex items-center bg-slate-100 p-xs rounded-lg">
+<button class="px-md py-xs text-[12px] font-semibold bg-white text-primary rounded shadow-sm">EN</button>
+<button class="px-md py-xs text-[12px] font-semibold text-slate-500 hover:text-primary">NP</button>
+</div>
+<div class="flex items-center gap-md">
+<button class="p-sm text-slate-400 hover:text-slate-900 transition-colors"><span class="material-symbols-outlined">language</span></button>
+<button class="p-sm text-slate-400 hover:text-slate-900 transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full"></span>
+</button>
+<button class="w-8 h-8 rounded-full overflow-hidden border border-slate-200 bg-slate-100">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="professional corporate headshot of a middle-aged man in a dark suit with a clean white background, soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD76ePq9faTesFuuJlVMzs9CGMERXTKiCHSxm4ifI6iOPc1A1T-pxuLClrXF596_-aEr4olK5smp2jtUl6wdI5Q43LS7WHf3x5X7y4ogkSpUI9nR3TwBAQXUw8YZP4r-m9GjRUzbGwRYx0DN2KSCTrMQrepDaQhcc2r1Czk0aHSGQ3V979uLbDfnPQ2JM286Gudeq-mx9xj7FUQQHI_hqzNM8qJz94qzuEcEm_hNabLL-Uy620dgGTd55XEaNr0TCyhfjnAWYp7Gw"/>
+</button>
+</div>
+</div>
+</header>
+<!-- Chat Canvas -->
+<section class="flex-1 max-w-4xl mx-auto w-full px-xl py-xl overflow-y-auto">
+<div class="space-y-xl pb-32">
+<!-- Date Marker -->
+<div class="flex justify-center">
+<span class="text-label-caps text-slate-400 font-medium">Today, October 24</span>
+</div>
+<!-- AI Message -->
+<div class="flex gap-md group">
+<div class="w-8 h-8 rounded bg-slate-900 flex-shrink-0 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+</div>
+<div class="flex flex-col gap-sm max-w-[85%]">
+<div class="message-bubble bg-white border border-slate-200 p-md rounded-xl rounded-tl-xs">
+<p class="text-body-md text-slate-700">Hello! I've loaded your Q3 Audit files into the vault. I can help you analyze the balance sheets or check for compliance anomalies. Where would you like to start?</p>
+</div>
+<span class="text-[10px] text-slate-400 px-xs">09:12 AM</span>
+</div>
+</div>
+<!-- User Message with File Preview -->
+<div class="flex flex-row-reverse gap-md group">
+<div class="w-8 h-8 rounded bg-secondary flex-shrink-0 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]">person</span>
+</div>
+<div class="flex flex-col gap-sm items-end max-w-[85%]">
+<div class="message-bubble bg-slate-50 border border-slate-200 p-md rounded-xl rounded-tr-xs">
+<p class="text-body-md text-slate-700">Please analyze this quarterly report for any discrepancies in the cash flow statement. Focus on the Nepalese branch operations.</p>
+</div>
+<!-- File Preview Card -->
+<div class="w-full max-w-sm bg-white border border-slate-200 rounded-lg p-md flex items-center gap-md shadow-sm border-l-4 border-l-secondary">
+<div class="w-10 h-12 bg-red-50 text-red-600 rounded flex items-center justify-center">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+</div>
+<div class="flex-1">
+<h4 class="text-body-sm font-semibold text-slate-900 truncate">Q3_Audit_Nepal_Final.pdf</h4>
+<p class="text-[11px] text-slate-500">2.4 MB • Verified by Vault AI</p>
+</div>
+<button class="p-sm text-slate-400 hover:text-slate-900">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+<span class="text-[10px] text-slate-400 px-xs">09:14 AM</span>
+</div>
+</div>
+<!-- AI Thinking State -->
+<div class="flex gap-md">
+<div class="w-8 h-8 rounded bg-slate-900 flex-shrink-0 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+</div>
+<div class="flex flex-col gap-sm">
+<div class="message-bubble bg-white border border-slate-100 p-md rounded-xl rounded-tl-xs flex items-center gap-sm">
+<span class="text-body-sm text-slate-500 italic">Thinking</span>
+<span class="flex gap-[2px]">
+<span class="thinking-dot animate-bounce"></span>
+<span class="thinking-dot animate-bounce [animation-delay:0.2s]"></span>
+<span class="thinking-dot animate-bounce [animation-delay:0.4s]"></span>
+</span>
+</div>
+</div>
+</div>
+<!-- AI Response with Confidence Badge & Bento Layout -->
+<div class="flex gap-md">
+<div class="w-8 h-8 rounded bg-slate-900 flex-shrink-0 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+</div>
+<div class="flex flex-col gap-md max-w-[90%]">
+<div class="message-bubble bg-white border border-slate-200 p-md rounded-xl rounded-tl-xs space-y-md">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-label-caps text-slate-400">Analysis Summary</span>
+<div class="px-sm py-xs bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded flex items-center gap-xs">
+<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+                                    98% CONFIDENCE
+                                </div>
+</div>
+<p class="text-body-md text-slate-700">I've analyzed the cash flow statement for the Nepal branch. Here are the key findings:</p>
+<!-- Bento Grid for Data -->
+<div class="grid grid-cols-2 gap-sm">
+<div class="p-md bg-slate-50 border border-slate-100 rounded-lg">
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Operating Cash Flow</span>
+<p class="text-h2 text-slate-900">रु 42.5M</p>
+<span class="text-[11px] text-emerald-600 font-medium">+12% vs Q2</span>
+</div>
+<div class="p-md bg-slate-50 border border-slate-100 rounded-lg">
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Flagged Entries</span>
+<p class="text-h2 text-slate-900">2 Items</p>
+<span class="text-[11px] text-amber-600 font-medium">Require Review</span>
+</div>
+</div>
+<div class="bg-amber-50 border-l-4 border-amber-400 p-md">
+<p class="text-body-sm text-amber-900 font-medium">Anomaly Detected:</p>
+<p class="text-body-sm text-amber-800 opacity-80">A discrepancy of रू 1.2M found in section 4.2 (Miscellaneous Expenses) that does not match local tax filings in Nepal.</p>
+</div>
+</div>
+<div class="flex gap-sm">
+<button class="px-md py-sm border border-slate-200 rounded-sm text-body-sm text-slate-600 hover:bg-slate-50 transition-colors">Export Report</button>
+<button class="px-md py-sm border border-slate-200 rounded-sm text-body-sm text-slate-600 hover:bg-slate-50 transition-colors">Compare with Q2</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Input Bar (Floating) -->
+<footer class="absolute bottom-0 left-0 right-0 p-xl bg-gradient-to-t from-white via-white to-transparent">
+<div class="max-w-4xl mx-auto bg-white border border-slate-200 shadow-xl rounded-xl p-xs flex items-end gap-xs focus-within:border-secondary transition-all">
+<button class="p-md text-slate-400 hover:text-slate-600 transition-colors">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<textarea class="flex-1 py-md bg-transparent border-none focus:ring-0 text-body-md placeholder-slate-400 resize-none max-h-48" placeholder="Ask BankAi about your documents..." rows="1"></textarea>
+<button class="m-xs p-md bg-slate-900 text-white rounded-lg hover:bg-black transition-all flex items-center justify-center">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+<div class="max-w-4xl mx-auto mt-sm flex justify-center">
+<p class="text-[11px] text-slate-400">Vault AI may occasionally provide inaccurate financial interpretations. Always verify critical data.</p>
+</div>
+</footer>
+</main>
+<!-- Contextual FAB (Hidden as per requirement for Chat) -->
+<!-- Suppression logic: On Chat/Details screens, the FAB is excluded to prioritize the main input journey. -->
+</body></html>

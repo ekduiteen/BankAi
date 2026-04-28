@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vault AI - Enterprise Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#131b2e",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#316bf3",
+                        "on-secondary": "#ffffff",
+                        "outline": "#76777d",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "tertiary-container": "#002113",
+                        "primary-fixed": "#dae2fd",
+                        "on-primary-fixed": "#131b2e",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "inverse-surface": "#213145",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#565e74",
+                        "secondary-fixed": "#dbe1ff",
+                        "secondary": "#0051d5",
+                        "on-primary-container": "#7c839b",
+                        "on-secondary-fixed": "#00174b",
+                        "surface-container-high": "#dce9ff",
+                        "primary-fixed-dim": "#bec6e0",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline-variant": "#c6c6cd",
+                        "on-surface-variant": "#45464d",
+                        "primary": "#000000",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "surface": "#f8f9ff",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "inverse-primary": "#bec6e0",
+                        "background": "#f8f9ff",
+                        "on-tertiary-container": "#009668",
+                        "tertiary-fixed": "#6ffbbe",
+                        "on-background": "#0b1c30",
+                        "surface-variant": "#d3e4fe",
+                        "error": "#ba1a1a",
+                        "surface-container": "#e5eeff",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary": "#000000",
+                        "on-secondary-container": "#fefcff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "xl": "48px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "nepali-supplement": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "h1": ["Public Sans"],
+                        "body-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "h2": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "nepali-supplement": ["110%", {"lineHeight": "1.8"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h1": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .scale-98:active { transform: scale(0.98); }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md">
+<!-- TopAppBar -->
+<header class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-public-sans text-sm tracking-tight docked full-width top-0 border-b border-slate-200 dark:border-slate-800 flat no shadows flex justify-between items-center h-16 px-6 w-full z-50 fixed">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-slate-900 dark:text-slate-50">Vault AI</span>
+<nav class="hidden md:flex items-center space-x-6">
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer active:opacity-80 transition-opacity" href="#">Audit Log</a>
+<a class="text-slate-900 dark:text-white font-semibold border-b-2 border-slate-900 dark:border-slate-50 pb-1 cursor-pointer active:opacity-80 transition-opacity" href="#">Analysis</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer active:opacity-80 transition-opacity" href="#">Compliance</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<button class="material-symbols-outlined p-2 hover:text-slate-900 dark:hover:text-slate-100 transition-colors" data-icon="enhanced_encryption">enhanced_encryption</button>
+<button class="material-symbols-outlined p-2 hover:text-slate-900 dark:hover:text-slate-100 transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined p-2 hover:text-slate-900 dark:hover:text-slate-100 transition-colors" data-icon="settings">settings</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-200">
+<img alt="Administrator Profile" data-alt="professional headshot of a corporate administrator in a clean modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_upSJnFlspJ8pXfb_lOXzjo2cybBjmdttxfUBSz8hwPibP_uT0Xr8Kye6p3S_QPeN_hF85TUsg86rh1Yvt88HkAtCzfFn5YaphvJDOfj7xb_XSp6HOgsqRWLRwQpxDVlN-I2dF0fjhUqcfj6QSaHR-sfJUf1iOkHunAERSs5O4-86_TK09j2k0ojyn6RhWchXMDbJxYqdG5ThtDyUfFAGW8jm_S-28QgtR8U9-HqYUfSvLp6G8xPty8CcjP0pJmEkwwWD7TfFGw"/>
+</div>
+</div>
+</header>
+<div class="flex pt-16">
+<!-- SideNavBar -->
+<aside class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 font-public-sans text-[13px] font-medium docked left-0 h-[calc(100vh-64px)] w-64 border-r border-slate-200 dark:border-slate-800 flat no shadows flex flex-col py-4 px-3 space-y-2 fixed">
+<div class="px-3 mb-6">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-lg" data-icon="account_balance">account_balance</span>
+</div>
+<div>
+<div class="text-lg font-black text-slate-900 dark:text-slate-50 leading-tight">Enterprise AI</div>
+<div class="text-[10px] text-slate-500 uppercase tracking-widest">Financial Integrity</div>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary text-white py-2.5 rounded-sm mb-4 font-bold tracking-tight scale-98 active:scale-95 transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="upload_file">upload_file</span>
+                Upload Document
+            </button>
+<nav class="flex-1 space-y-1">
+<div class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 rounded-sm p-2 flex items-center gap-3 cursor-pointer">
+<span class="material-symbols-outlined text-[20px]" data-icon="add_comment">add_comment</span>
+                    New Chat
+                </div>
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 p-2 rounded-sm flex items-center gap-3 cursor-pointer transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]" data-icon="history">history</span>
+                    Session History
+                </div>
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 p-2 rounded-sm flex items-center gap-3 cursor-pointer transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]" data-icon="folder_managed">folder_managed</span>
+                    Document Library
+                </div>
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 p-2 rounded-sm flex items-center gap-3 cursor-pointer transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]" data-icon="analytics">analytics</span>
+                    Analytics
+                </div>
+</nav>
+<div class="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-1">
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 p-2 rounded-sm flex items-center gap-3 cursor-pointer transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]" data-icon="verified_user">verified_user</span>
+                    Security Status
+                </div>
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 p-2 rounded-sm flex items-center gap-3 cursor-pointer transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]" data-icon="help_outline">help_outline</span>
+                    Help Center
+                </div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 flex-1 p-xl max-w-7xl mx-auto w-full">
+<!-- Welcome Area -->
+<section class="mb-xl">
+<h1 class="font-h1 text-h1 text-on-background mb-sm">Welcome back, Administrator</h1>
+<p class="text-body-lg font-body-lg text-outline mb-lg">Secure financial analysis and document auditing powered by Vault AI.</p>
+<div class="relative w-full h-48 rounded-xl overflow-hidden mb-xl group">
+<img alt="Financial Modern Architecture" class="w-full h-full object-cover filter brightness-50" data-alt="abstract architectural shot of a modern financial district building with clean glass lines and professional atmosphere at dusk" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCb_XqEYt2px47Rw3PLGHo7z4Tt3nEDKBgS1AJ9DP7MoTtfpNGu8rkucpCN87DyboOi73kI-s87UnYvx5TS0NknggzomY0dauIBIZkbk7w_gV76mvGsnjFyY1-Gf4CNQhza6QCEn8ofGsUO57jQ36waW06xfkwWhnp_HZ-fXG2zEYJdn1YzDzNEwyWME7yh1LtelY2b9t5As72dB88SnITRchPaWhdJH_ZBINSL0FPT8P1stP401TGVIWL7A6EFsbzk27QDpwWo8A"/>
+<div class="absolute inset-0 flex flex-col justify-end p-lg">
+<div class="flex items-center gap-3 text-white">
+<span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold uppercase rounded">System Status: Active</span>
+<span class="text-body-sm">All audit engines performing within optimal parameters.</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid: Quick Start & Documents -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Quick-start Templates (Col 1-8) -->
+<div class="col-span-12 lg:col-span-8">
+<div class="mb-md flex justify-between items-end">
+<h2 class="font-h2 text-h2 text-on-background">Quick-start Analysis</h2>
+<span class="text-label-caps text-secondary font-bold cursor-pointer">VIEW ALL TEMPLATES</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Template Card 1 -->
+<div class="p-lg bg-white border border-slate-200 rounded-lg hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex items-start justify-between mb-md">
+<div class="p-sm bg-surface-container rounded">
+<span class="material-symbols-outlined text-secondary" data-icon="monitoring">monitoring</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+<h3 class="font-h2 text-body-lg font-bold mb-xs">Analyze Q3 Report</h3>
+<p class="text-body-sm text-outline">Comprehensive extraction of P&amp;L metrics and variance analysis from quarterly filings.</p>
+</div>
+<!-- Template Card 2 -->
+<div class="p-lg bg-white border border-slate-200 rounded-lg hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex items-start justify-between mb-md">
+<div class="p-sm bg-surface-container rounded">
+<span class="material-symbols-outlined text-secondary" data-icon="policy">policy</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+<h3 class="font-h2 text-body-lg font-bold mb-xs">Compliance Check</h3>
+<p class="text-body-sm text-outline">Automated validation against SEC and internal corporate governance frameworks.</p>
+</div>
+<!-- Template Card 3 -->
+<div class="p-lg bg-white border border-slate-200 rounded-lg hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex items-start justify-between mb-md">
+<div class="p-sm bg-surface-container rounded">
+<span class="material-symbols-outlined text-secondary" data-icon="contract">contract</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+<h3 class="font-h2 text-body-lg font-bold mb-xs">Lease Agreement Audit</h3>
+<p class="text-body-sm text-outline">Extraction of key dates, financial obligations, and renewal clauses across portfolios.</p>
+</div>
+<!-- Template Card 4 -->
+<div class="p-lg bg-white border border-slate-200 rounded-lg hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex items-start justify-between mb-md">
+<div class="p-sm bg-surface-container rounded">
+<span class="material-symbols-outlined text-secondary" data-icon="risk_assessment">assessment</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-secondary transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+<h3 class="font-h2 text-body-lg font-bold mb-xs">Anomaly Detection</h3>
+<p class="text-body-sm text-outline">Deep-scan transaction logs for irregular patterns and potential audit flags.</p>
+</div>
+</div>
+</div>
+<!-- Pinned Documents (Col 9-12) -->
+<div class="col-span-12 lg:col-span-4">
+<div class="mb-md flex justify-between items-end">
+<h2 class="font-h2 text-h2 text-on-background">Pinned</h2>
+<span class="material-symbols-outlined text-outline cursor-pointer" data-icon="push_pin">push_pin</span>
+</div>
+<div class="space-y-sm">
+<!-- Pinned Item -->
+<div class="p-md bg-white border border-slate-200 border-l-4 border-l-secondary rounded flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary" data-icon="description">description</span>
+<div class="flex-1 overflow-hidden">
+<div class="font-bold text-body-sm truncate">FY2024_Master_Audit_V2.pdf</div>
+<div class="text-[10px] text-outline uppercase tracking-wider">Modified 2h ago</div>
+</div>
+</div>
+<!-- Pinned Item -->
+<div class="p-md bg-white border border-slate-200 border-l-4 border-l-tertiary-fixed-dim rounded flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary" data-icon="table_chart">table_chart</span>
+<div class="flex-1 overflow-hidden">
+<div class="font-bold text-body-sm truncate">Global_Tax_Provision_Model.xlsx</div>
+<div class="text-[10px] text-outline uppercase tracking-wider">Verified by AI</div>
+</div>
+</div>
+<!-- Pinned Item -->
+<div class="p-md bg-white border border-slate-200 border-l-4 border-l-secondary rounded flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary" data-icon="folder_zip">folder_zip</span>
+<div class="flex-1 overflow-hidden">
+<div class="font-bold text-body-sm truncate">Internal_Control_Doc_Bundle.zip</div>
+<div class="text-[10px] text-outline uppercase tracking-wider">Modified yesterday</div>
+</div>
+</div>
+</div>
+<!-- Small Utility Card -->
+<div class="mt-lg p-lg bg-primary-container rounded-lg text-white">
+<div class="flex items-center gap-2 mb-sm">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="verified">verified</span>
+<span class="text-label-caps tracking-widest">TRUST SCORE</span>
+</div>
+<div class="text-h1 font-h1">98.4%</div>
+<p class="text-[11px] opacity-70 mt-xs">Across all extracted financial entities this month.</p>
+</div>
+</div>
+<!-- Recent Sessions (Full Width Bottom) -->
+<div class="col-span-12 mt-lg">
+<div class="mb-md flex justify-between items-end">
+<h2 class="font-h2 text-h2 text-on-background">Recent Sessions</h2>
+<button class="flex items-center gap-2 text-body-sm text-outline hover:text-secondary transition-colors">
+                            View full history
+                            <span class="material-symbols-outlined text-sm" data-icon="history">history</span>
+</button>
+</div>
+<div class="bg-white border border-slate-200 rounded-lg overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-slate-900 text-white font-label-caps text-[10px] uppercase tracking-widest">
+<tr>
+<th class="px-lg py-md">Session Intent</th>
+<th class="px-lg py-md">Status</th>
+<th class="px-lg py-md">Confidence</th>
+<th class="px-lg py-md">Timestamp</th>
+<th class="px-lg py-md text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-lg py-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline" data-icon="chat_bubble_outline">chat_bubble_outline</span>
+<span class="font-semibold text-body-sm">Analysis of JPMorgan 10-K Risk Factors</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded border border-green-100">
+<span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                                            COMPLETED
+                                        </span>
+</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-2">
+<div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary-fixed-dim h-full" style="width: 94%"></div>
+</div>
+<span class="text-[11px] font-bold">94%</span>
+</div>
+</td>
+<td class="px-lg py-md text-body-sm text-outline">Oct 24, 14:20</td>
+<td class="px-lg py-md text-right">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary" data-icon="more_vert">more_vert</span>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-lg py-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline" data-icon="chat_bubble_outline">chat_bubble_outline</span>
+<span class="font-semibold text-body-sm">Audit trail for Q3 Vendor Payments</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded border border-blue-100">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                            IN REVIEW
+                                        </span>
+</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-2">
+<div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+<div class="bg-yellow-400 h-full" style="width: 82%"></div>
+</div>
+<span class="text-[11px] font-bold">82%</span>
+</div>
+</td>
+<td class="px-lg py-md text-body-sm text-outline">Oct 24, 11:05</td>
+<td class="px-lg py-md text-right">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary" data-icon="more_vert">more_vert</span>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-lg py-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline" data-icon="chat_bubble_outline">chat_bubble_outline</span>
+<span class="font-semibold text-body-sm">Internal ESG Compliance Validation</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded border border-green-100">
+<span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>
+                                            COMPLETED
+                                        </span>
+</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-2">
+<div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary-fixed-dim h-full" style="width: 98%"></div>
+</div>
+<span class="text-[11px] font-bold">98%</span>
+</div>
+</td>
+<td class="px-lg py-md text-body-sm text-outline">Oct 23, 16:45</td>
+<td class="px-lg py-md text-right">
+<span class="material-symbols-outlined text-outline cursor-pointer hover:text-primary" data-icon="more_vert">more_vert</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

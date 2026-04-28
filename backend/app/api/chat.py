@@ -1,0 +1,645 @@
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
+from fastapi.responses import StreamingResponse
+from sqlmodel import Session, select
+import json
+import httpx
+
+from ..db.session import get_session
+from ..models.user import User
+from ..models.chat import ChatSession, ChatMessage
+from ..schemas.chat import ChatSessionCreate, ChatSessionResponse, ChatRequest, ChatMessageResponse
+from .deps import get_current_user
+from ..services.rag_service import generate_rag_response, get_system_identity, RAG_PROMPT_TEMPLATE, GENERAL_PROMPT_TEMPLATE
+from ..services.audit_service import log_audit_event
+from ..services.guardrail_service import detect_prompt_injection, detect_and_mask_pii
+from ..services.query_rewrite_service import rewrite_query_for_retrieval
+from ..core.config import settings
+
+router = APIRouter()
+
+CHAT_UPLOAD_DIR = settings.CHAT_UPLOAD_DIR
+
+
+def ensure_chat_upload_dir() -> None:
+    import os
+    os.makedirs(CHAT_UPLOAD_DIR, exist_ok=True)
+
+
+def _session_active_document_ids(session: ChatSession, requested_ids: Optional[List[int]] = None) -> list[int]:
+    try:
+        stored_ids = json.loads(session.active_document_ids_json or "[]")
+    except Exception:
+        stored_ids = []
+
+    merged: list[int] = []
+    for doc_id in [*stored_ids, *(requested_ids or [])]:
+        try:
+            doc_id = int(doc_id)
+        except (TypeError, ValueError):
+            continue
+        if doc_id not in merged:
+            merged.append(doc_id)
+    return merged
+
+
+def _track_session_document(session: ChatSession, document_id: int, db: Session) -> None:
+    active_docs = _session_active_document_ids(session)
+    if document_id not in active_docs:
+        active_docs.append(document_id)
+        session.active_document_ids_json = json.dumps(active_docs)
+        db.add(session)
+        db.commit()
+
+
+def _maybe_update_session_title(session: ChatSession, message: str, db: Session) -> None:
+    if session.title and session.title not in ("New Conversation", "New Analysis"):
+        return
+    title = " ".join(message.strip().split())[:60]
+    if len(message.strip()) > 60:
+        title = title.rstrip() + "..."
+    if title:
+        session.title = title
+        db.add(session)
+        db.commit()
+
+
+def _update_session_summary(session: ChatSession, user_message: str, assistant_message: str, db: Session) -> None:
+    summary = f"User asked: {user_message[:220]}"
+    if assistant_message:
+        summary += f"\nBankAi answered: {assistant_message[:320]}"
+    session.session_summary = summary
+    db.add(session)
+    db.commit()
+
+@router.post("/sessions", response_model=ChatSessionResponse)
+def create_chat_session(
+    *,
+    db: Session = Depends(get_session),
+    session_in: ChatSessionCreate,
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    if current_user.bank_id is None:
+        from ..models.bank import Bank
+        default_bank = db.exec(select(Bank).where(Bank.code == "DEFAULT")).first()
+        if default_bank:
+            current_user.bank_id = default_bank.id
+        else:
+            raise HTTPException(status_code=500, detail="User has no bank assigned and no default bank exists")
+            
+    session = ChatSession(
+        bank_id=current_user.bank_id,
+        user_id=current_user.id,
+        title=session_in.title
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+    return session
+
+@router.get("/sessions", response_model=List[ChatSessionResponse])
+def read_chat_sessions(
+    db: Session = Depends(get_session),
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """
+    Retrieve chat sessions for current user.
+    """
+    sessions = db.exec(
+        select(ChatSession)
+        .where(ChatSession.user_id == current_user.id)
+        .order_by(ChatSession.created_at.desc())
+        .offset(skip).limit(limit)
+    ).all()
+    return sessions
+
+@router.get("/sessions/{session_id}", response_model=ChatSessionResponse)
+def read_chat_session(
+    *,
+    db: Session = Depends(get_session),
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    session = db.get(ChatSession, session_id)
+    if not session or session.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
+@router.get("/sessions/{session_id}/messages", response_model=List[ChatMessageResponse])
+def read_chat_messages(
+    *,
+    db: Session = Depends(get_session),
+    session_id: int,
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """
+    Retrieve all messages for a chat session.
+    """
+    session = db.get(ChatSession, session_id)
+    if not session or session.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    messages = db.exec(
+        select(ChatMessage)
+        .where(ChatMessage.session_id == session_id)
+        .order_by(ChatMessage.created_at)
+    ).all()
+    return messages
+
+@router.post("/sessions/{session_id}/messages")
+def create_chat_message(
+    *,
+    db: Session = Depends(get_session),
+    session_id: int,
+    chat_request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    session = db.get(ChatSession, session_id)
+    if not session or session.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    # 1. Guardrail checks
+    if detect_prompt_injection(chat_request.message, db, current_user.id, current_user.bank_id):
+        raise HTTPException(status_code=400, detail="Query rejected due to security policy.")
+        
+    safe_message = detect_and_mask_pii(chat_request.message)
+
+    # 2. Save user message
+    user_msg = ChatMessage(
+        bank_id=current_user.bank_id,
+        session_id=session_id,
+        user_id=current_user.id,
+        role="user",
+        content=safe_message
+    )
+    db.add(user_msg)
+    db.commit()
+    _maybe_update_session_title(session, safe_message, db)
+    
+    from sqlalchemy import asc
+    history = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(asc(ChatMessage.created_at)).all()
+    retrieval_query = rewrite_query_for_retrieval(safe_message, history[:-1])
+
+    # 3. Build prompt
+    sys_identity = get_system_identity(chat_request.language)
+    if chat_request.image:
+        from ..services.llm_service import call_vision_llm
+        answer = call_vision_llm(f"{sys_identity}\n\n{chat_request.message}", chat_request.image)
+        sources = []
+    else:
+        active_doc_ids = _session_active_document_ids(session, chat_request.active_document_ids)
+        answer, sources = generate_rag_response(
+            retrieval_query,
+            current_user.bank_id,
+            current_user.role,
+            db,
+            chat_request.language,
+            active_document_ids=active_doc_ids,
+            session_id=session_id,
+        )
+    
+    # 4. Save AI message
+    ai_msg = ChatMessage(
+        bank_id=current_user.bank_id,
+        session_id=session_id,
+        user_id=current_user.id,
+        role="assistant",
+        content=answer,
+        sources_json=json.dumps(sources)
+    )
+    db.add(ai_msg)
+    db.commit()
+    db.refresh(ai_msg)
+    _update_session_summary(session, safe_message, answer, db)
+    
+    log_audit_event(
+        db=db,
+        action="chat_query",
+        resource_type="chat",
+        resource_id=str(session_id),
+        bank_id=current_user.bank_id,
+        user_id=current_user.id,
+        metadata={
+            "query": safe_message,
+            "pii_detected": safe_message != chat_request.message,
+            "masking_mode": "redact",
+            "llm_received_masked_input": True,
+            "sources_count": len(sources),
+            "rewritten_query": retrieval_query if retrieval_query != safe_message else None,
+        }
+    )
+    
+    return ai_msg
+
+@router.post("/sessions/{session_id}/stream")
+def stream_chat_message(
+    *,
+    db: Session = Depends(get_session),
+    session_id: int,
+    chat_request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Stream a chat response using Server-Sent Events.
+    """
+    session = db.get(ChatSession, session_id)
+    if not session or session.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    if detect_prompt_injection(chat_request.message, db, current_user.id, current_user.bank_id):
+        raise HTTPException(status_code=400, detail="Query rejected due to security policy.")
+    
+    safe_message = detect_and_mask_pii(chat_request.message)
+    
+    # Save user message
+    user_msg = ChatMessage(
+        bank_id=current_user.bank_id,
+        session_id=session_id,
+        user_id=current_user.id,
+        role="user",
+        content=safe_message
+    )
+    db.add(user_msg)
+    db.commit()
+    _maybe_update_session_title(session, safe_message, db)
+    
+    from sqlalchemy import asc
+    history = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(asc(ChatMessage.created_at)).all()
+    retrieval_query = rewrite_query_for_retrieval(safe_message, history[:-1])
+
+    # Resolve active session document IDs for session-aware RAG
+    active_doc_ids = _session_active_document_ids(session, chat_request.active_document_ids)
+
+    has_image = bool(chat_request.image)
+
+    def event_stream():
+        # -- Status: searching documents --
+        yield f"data: {json.dumps({'type': 'status', 'message': 'Searching your uploaded documents...'})}\n\n"
+
+        sources_list = []
+        sys_identity = get_system_identity(chat_request.language)
+
+        if not has_image:
+            try:
+                from ..services.embedding_service import generate_embeddings
+                from ..services.qdrant_service import search_points
+                from ..models.document import Document
+
+                query_vector = generate_embeddings([retrieval_query])[0]
+
+                # Priority 1: session-scoped docs
+                session_results = []
+                if active_doc_ids:
+                    session_results = search_points(
+                        query_vector,
+                        current_user.bank_id,
+                        limit=5,
+                        document_ids=active_doc_ids,
+                        session_id=session_id,
+                        document_scope="session_upload",
+                    )
+
+                # Priority 2: global knowledge top-up
+                global_limit = max(0, 5 - len(session_results))
+                global_results = []
+                if global_limit > 0:
+                    global_results = search_points(
+                        query_vector,
+                        current_user.bank_id,
+                        limit=global_limit,
+                        document_scope="global_knowledge",
+                    )
+                    seen = {r.payload.get("document_id") for r in session_results if r.payload}
+                    global_results = [r for r in global_results if r.payload and r.payload.get("document_id") not in seen]
+
+                results = session_results + global_results
+
+                if results:
+                    doc_ids = list(set(r.payload.get("document_id") for r in results if r.payload))
+                    allowed_docs = set()
+                    for doc_id in doc_ids:
+                        doc = db.get(Document, doc_id)
+                        if doc and doc.status in ("approved", "indexed", "ready"):
+                            if doc.document_scope == "session_upload" and doc.session_id != session_id:
+                                continue
+                            if current_user.role == "staff_user" and doc.access_level and doc.access_level > 0:
+                                continue
+                            allowed_docs.add(doc_id)
+
+                    filtered = [r for r in results if r.payload and r.payload.get("document_id") in allowed_docs]
+
+                    if filtered:
+                        context = "\n\n---\n\n".join(r.payload.get("text", "") for r in filtered)
+                        sys_identity += (
+                            f"\n\n--- DOCUMENT CONTEXT ---\n"
+                            f"Use the following context from approved documents to answer the user's question.\n\n"
+                            f"{context}\n--- END DOCUMENT CONTEXT ---"
+                        )
+                        seen_src: set[int] = set()
+                        for r in filtered:
+                            doc_id = r.payload.get("document_id")
+                            if doc_id and doc_id not in seen_src:
+                                doc = db.get(Document, doc_id)
+                                sources_list.append({
+                                    "document_id":    doc_id,
+                                    "document_title": (doc.title or doc.file_name) if doc else "Database Source",
+                                    "title":          (doc.title or doc.file_name) if doc else "Database Source",
+                                    "snippet":        r.payload.get("text", "")[:120] + "...",
+                                    "page_number":    r.payload.get("page_number"),
+                                })
+                                seen_src.add(doc_id)
+            except Exception as e:
+                print(f"RAG failed in stream, falling back: {e}")
+
+        # -- Status: generating response --
+        yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing source-based answer...'})}\n\n"
+
+        ollama_messages = [{"role": "system", "content": sys_identity}]
+        for msg in history[-10:]:
+            ollama_messages.append({
+                "role": "assistant" if msg.role == "assistant" else "user",
+                "content": msg.content,
+            })
+        if has_image:
+            ollama_messages[-1]["images"] = [chat_request.image]
+
+        full_response = ""
+        url = f"{settings.LLM_API_BASE}/api/chat"
+        payload = {"model": settings.LLM_MODEL, "messages": ollama_messages, "stream": True}
+
+        try:
+            with httpx.stream("POST", url, json=payload, timeout=300.0) as response:
+                for line in response.iter_lines():
+                    if line:
+                        try:
+                            data = json.loads(line)
+                            token = data.get("message", {}).get("content", "") or data.get("response", "")
+                            full_response += token
+                            yield f"data: {json.dumps({'token': token})}\n\n"
+                            if data.get("done", False):
+                                break
+                        except json.JSONDecodeError:
+                            continue
+        except Exception as e:
+            print(f"Streaming error: {e}")
+            yield f"data: {json.dumps({'token': 'Error connecting to AI engine.', 'done': True})}\n\n"
+
+        # Generate follow-up suggestions
+        suggestions = []
+        try:
+            from ..services.llm_service import call_llm
+            import re
+            sugg_prompt = (
+                f"Based on this answer, generate exactly 3 short follow-up questions the user might ask next. "
+                f"Return ONLY a JSON array of strings.\n\nAnswer: {full_response[:2000]}"
+            )
+            sugg_raw = call_llm(sugg_prompt)
+            m = re.search(r'\[.*\]', sugg_raw, re.DOTALL)
+            if m:
+                suggestions = json.loads(m.group(0))
+        except Exception as e:
+            print(f"Failed to generate suggestions: {e}")
+
+        # Persist assistant message
+        try:
+            ai_msg = ChatMessage(
+                bank_id=current_user.bank_id,
+                session_id=session_id,
+                user_id=current_user.id,
+                role="assistant",
+                content=full_response,
+                sources_json=json.dumps(sources_list),
+                suggestions_json=json.dumps(suggestions),
+            )
+            db.add(ai_msg)
+            db.commit()
+            _update_session_summary(session, safe_message, full_response, db)
+            log_audit_event(
+                db=db,
+                action="chat_query",
+                resource_type="chat",
+                resource_id=str(session_id),
+                bank_id=current_user.bank_id,
+                user_id=current_user.id,
+                metadata={
+                    "query": safe_message,
+                    "pii_detected": safe_message != chat_request.message,
+                    "masking_mode": "redact",
+                    "llm_received_masked_input": True,
+                    "sources_count": len(sources_list),
+                    "rewritten_query": retrieval_query if retrieval_query != safe_message else None,
+                    "streamed": True,
+                },
+            )
+        except Exception as e:
+            print(f"Error saving streamed message: {e}")
+
+        yield f"data: {json.dumps({'done': True, 'sources': sources_list, 'suggestions': suggestions})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+@router.post("/sessions/{session_id}/files")
+async def upload_session_file(
+    *,
+    db: Session = Depends(get_session),
+    session_id: int,
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Upload a file to a specific chat session for background processing.
+    """
+    from ..models.document import Document
+    import os, shutil
+    
+    session = db.get(ChatSession, session_id)
+    if not session or session.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    upload_dir = CHAT_UPLOAD_DIR
+    ensure_chat_upload_dir()
+    file_ext = file.filename.split('.')[-1].lower()
+    file_path = os.path.join(upload_dir, f"{session_id}_{file.filename}")
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    doc = Document(
+        bank_id=current_user.bank_id,
+        uploaded_by=current_user.id,
+        title=file.filename,
+        file_name=file.filename,
+        file_type=file_ext,
+        file_path=file_path,
+        document_type="chat_upload",
+        status="uploaded",
+        session_id=session_id,
+        document_scope="session_upload"
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+    
+    _track_session_document(session, doc.id, db)
+        
+    from ..services.ingestion_service import process_document
+    background_tasks.add_task(process_document, doc.id, db)
+    
+    return {
+        "id": doc.id,
+        "document_id": doc.id,
+        "session_id": session_id,
+        "file_name": file.filename,
+        "name": file.filename,
+        "status": "uploaded"
+    }
+
+@router.post("/sessions/{session_id}/stream-file")
+async def stream_chat_with_file(
+    *,
+    db: Session = Depends(get_session),
+    session_id: int,
+    message: str = Form(...),
+    language: str = Form("en"),
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Upload a file and stream AI analysis of its contents.
+    Supports PDF, DOCX, XLSX, PPTX, TXT, and images.
+    """
+    import os, shutil, base64
+    from ..models.document import Document
+    
+    session = db.get(ChatSession, session_id)
+    if not session or session.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Save the uploaded file durably enough for background indexing.
+    upload_dir = CHAT_UPLOAD_DIR
+    ensure_chat_upload_dir()
+    file_ext = file.filename.split('.')[-1].lower()
+    file_path = os.path.join(upload_dir, f"{session_id}_{file.filename}")
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    doc = Document(
+        bank_id=current_user.bank_id,
+        uploaded_by=current_user.id,
+        title=file.filename,
+        file_name=file.filename,
+        file_type=file_ext,
+        file_path=file_path,
+        document_type="chat_upload",
+        status="uploaded",
+        session_id=session_id,
+        document_scope="session_upload",
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+    _track_session_document(session, doc.id, db)
+    
+    # Save user message
+    user_msg = ChatMessage(
+        bank_id=current_user.bank_id,
+        session_id=session_id,
+        user_id=current_user.id,
+        role="user",
+        content=f"[File: {file.filename}] {message}"
+    )
+    db.add(user_msg)
+    db.commit()
+    _maybe_update_session_title(session, message, db)
+    
+    from sqlalchemy import asc
+    history = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(asc(ChatMessage.created_at)).all()
+    
+    sys_identity = get_system_identity(language)
+    ollama_messages = [{"role": "system", "content": sys_identity}]
+    for msg in history[-10:]:
+        ollama_messages.append({
+            "role": "assistant" if msg.role == "assistant" else "user",
+            "content": msg.content
+        })
+    
+    is_image = file_ext in ['jpg', 'jpeg', 'png']
+    
+    if is_image:
+        with open(file_path, 'rb') as f:
+            image_b64 = base64.b64encode(f.read()).decode('utf-8')
+        ollama_messages[-1]["images"] = [image_b64]
+    else:
+        from ..services.ingestion_service import extract_text
+        extracted = extract_text(file_path, file_ext)
+        
+        if not extracted.strip():
+            extracted = "(No text could be extracted from this file)"
+        
+        # Truncate if too long (keep first 8000 chars for context window)
+        if len(extracted) > 8000:
+            extracted = extracted[:8000] + "\n\n... (truncated)"
+        
+        ollama_messages[-1]["content"] = f"I have uploaded a file called \"{file.filename}\". Here is the extracted content:\n\n--- FILE CONTENT ---\n{extracted}\n--- END FILE CONTENT ---\n\nMy request: {message}"
+    
+    from ..services.ingestion_service import process_document
+    background_tasks.add_task(process_document, doc.id, db)
+    
+    def event_stream():
+        full_response = ""
+        url = f"{settings.LLM_API_BASE}/api/chat"
+        payload = {
+            "model": settings.LLM_MODEL,
+            "messages": ollama_messages,
+            "stream": True
+        }
+
+        yield f"data: {json.dumps({'type': 'status', 'message': 'Analyzing uploaded file...'})}\n\n"
+        
+        try:
+            with httpx.stream("POST", url, json=payload, timeout=300.0) as response:
+                for line in response.iter_lines():
+                    if line:
+                        try:
+                            data = json.loads(line)
+                            token = data.get("message", {}).get("content", "")
+                            if "response" in data:
+                                token = data.get("response", "")
+                            full_response += token
+                            yield f"data: {json.dumps({'token': token})}\n\n"
+                            if data.get("done", False):
+                                break
+                        except json.JSONDecodeError:
+                            continue
+        except Exception as e:
+            print(f"Streaming error: {e}")
+            yield f"data: {json.dumps({'token': 'Error connecting to AI engine.'})}\n\n"
+        
+        try:
+            ai_msg = ChatMessage(
+                bank_id=current_user.bank_id,
+                session_id=session_id,
+                user_id=current_user.id,
+                role="assistant",
+                content=full_response,
+                sources_json=json.dumps([{
+                    "document_id": doc.id,
+                    "document_title": doc.title or doc.file_name,
+                    "title": doc.title or doc.file_name,
+                    "file_name": doc.file_name,
+                }])
+            )
+            db.add(ai_msg)
+            db.commit()
+            _update_session_summary(session, message, full_response, db)
+        except Exception as e:
+            print(f"Error saving streamed message: {e}")
+        
+        yield f"data: {json.dumps({'done': True, 'id': doc.id, 'document_id': doc.id})}\n\n"
+    
+    return StreamingResponse(event_stream(), media_type="text/event-stream")

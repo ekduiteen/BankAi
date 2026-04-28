@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vault AI - Document Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#131b2e",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#316bf3",
+                        "on-secondary": "#ffffff",
+                        "outline": "#76777d",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "tertiary-container": "#002113",
+                        "primary-fixed": "#dae2fd",
+                        "on-primary-fixed": "#131b2e",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-highest": "#d3e4fe",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "inverse-surface": "#213145",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#565e74",
+                        "secondary-fixed": "#dbe1ff",
+                        "secondary": "#0051d5",
+                        "on-primary-container": "#7c839b",
+                        "on-secondary-fixed": "#00174b",
+                        "surface-container-high": "#dce9ff",
+                        "primary-fixed-dim": "#bec6e0",
+                        "inverse-on-surface": "#eaf1ff",
+                        "outline-variant": "#c6c6cd",
+                        "on-surface-variant": "#45464d",
+                        "primary": "#000000",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8f9ff",
+                        "on-surface": "#0b1c30",
+                        "surface": "#f8f9ff",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "inverse-primary": "#bec6e0",
+                        "background": "#f8f9ff",
+                        "on-tertiary-container": "#009668",
+                        "tertiary-fixed": "#6ffbbe",
+                        "on-background": "#0b1c30",
+                        "surface-variant": "#d3e4fe",
+                        "error": "#ba1a1a",
+                        "surface-container": "#e5eeff",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary": "#000000",
+                        "on-secondary-container": "#fefcff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "gutter": "24px",
+                        "unit": "4px",
+                        "xl": "48px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "nepali-supplement": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "h1": ["Public Sans"],
+                        "body-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "h2": ["Public Sans"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "nepali-supplement": ["110%", {"lineHeight": "1.8"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "h1": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "h2": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-hidden">
+<!-- TopAppBar Shell -->
+<header class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-public-sans text-sm tracking-tight docked full-width top-0 border-b border-slate-200 dark:border-slate-800 flat no shadows flex justify-between items-center h-16 px-6 w-full z-50 fixed">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-slate-900 dark:text-slate-50">Vault AI</span>
+<nav class="hidden md:flex items-center space-x-6 h-16">
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer active:opacity-80 transition-opacity h-full flex items-center" href="#">Audit Log</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer active:opacity-80 transition-opacity h-full flex items-center" href="#">Analysis</a>
+<a class="text-slate-500 dark:text-slate-400 font-medium hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer active:opacity-80 transition-opacity h-full flex items-center" href="#">Compliance</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<!-- Bilingual Switcher -->
+<div class="flex items-center bg-slate-100 p-1 rounded-sm">
+<button class="px-2 py-0.5 text-[10px] font-bold bg-white shadow-sm rounded-sm">EN</button>
+<button class="px-2 py-0.5 text-[10px] font-bold text-slate-400">ने</button>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-600 cursor-pointer" data-icon="enhanced_encryption">enhanced_encryption</span>
+<span class="material-symbols-outlined text-slate-600 cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-slate-600 cursor-pointer" data-icon="settings">settings</span>
+</div>
+<div class="h-8 w-8 rounded-full bg-slate-200 overflow-hidden border border-slate-300">
+<img alt="Administrator Profile" class="h-full w-full object-cover" data-alt="professional portrait of a financial executive in a corporate setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPr1ytLSA0k-zMBC-EvHC7Y-rEG917APokGeM5t9EqMLNW3eHTZsEsyebbEhHSz-At2pI7N5bHABgncjUfTPrBqZ3Lt--rxo8uexeTktX5yg-VNHagPmqTnUGER-fG10XgACC9H3SbSZfrZRvaA7OgT2uJRq3RXW2_z7nihUQZCE99Xa-iFDyp2sUZeSPyJ6mgXizQOLF1ipr8OBZBLhkSlWX_iSILIXX1SVqITC11UVFqek3Nmj8cAwBS9z4FY_oGV4BLudtBNA"/>
+</div>
+</div>
+</header>
+<div class="flex pt-16 h-screen">
+<!-- SideNavBar Shell -->
+<aside class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 font-public-sans text-[13px] font-medium docked left-0 h-screen w-64 border-r border-slate-200 dark:border-slate-800 flat no shadows flex flex-col py-4 px-3 space-y-2 z-40">
+<div class="flex items-center gap-3 px-2 mb-6">
+<div class="h-8 w-8 bg-primary rounded flex items-center justify-center text-white font-bold">V</div>
+<div>
+<div class="text-lg font-black text-slate-900 dark:text-slate-50 leading-tight">Enterprise AI</div>
+<div class="text-[10px] uppercase tracking-widest text-slate-500">Financial Integrity</div>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-sm flex items-center justify-center gap-2 mb-4 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="add_comment">add_comment</span>
+                Upload Document
+            </button>
+<nav class="flex-1 space-y-1">
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 flex items-center gap-3 px-3 py-2 cursor-pointer transition-all duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined" data-icon="add_comment">add_comment</span>
+<span>New Chat</span>
+</div>
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 flex items-center gap-3 px-3 py-2 cursor-pointer transition-all duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>Session History</span>
+</div>
+<div class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 rounded-sm flex items-center gap-3 px-3 py-2 cursor-pointer transition-all duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined" data-icon="folder_managed">folder_managed</span>
+<span>Document Library</span>
+</div>
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 flex items-center gap-3 px-3 py-2 cursor-pointer transition-all duration-200 scale-98 active:scale-95">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</div>
+</nav>
+<div class="pt-4 mt-4 border-t border-slate-200 space-y-1">
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 flex items-center gap-3 px-3 py-2 cursor-pointer text-xs">
+<span class="material-symbols-outlined text-sm" data-icon="verified_user">verified_user</span>
+<span>Security Status</span>
+</div>
+<div class="text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 flex items-center gap-3 px-3 py-2 cursor-pointer text-xs">
+<span class="material-symbols-outlined text-sm" data-icon="help_outline">help_outline</span>
+<span>Help Center</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-row overflow-hidden bg-background">
+<!-- Left Side: Document Grid (Library) -->
+<section class="flex-1 flex flex-col p-8 overflow-y-auto border-r border-slate-200">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h1 class="font-h1 text-h1 text-on-background mb-2">Document Library</h1>
+<p class="font-body-md text-slate-500">Manage and analyze your high-integrity financial records.</p>
+</div>
+<div class="flex gap-2">
+<div class="relative">
+<input class="bg-slate-100 border-none rounded-sm px-4 py-2 pl-10 text-sm focus:ring-2 focus:ring-secondary focus:bg-white transition-all w-64" placeholder="Search files..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm" data-icon="search">search</span>
+</div>
+<button class="bg-white border border-slate-200 p-2 rounded-sm hover:bg-slate-50">
+<span class="material-symbols-outlined text-slate-600" data-icon="filter_list">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Bento Grid Content -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Featured Doc 1 -->
+<div class="col-span-8 bg-white border border-slate-200 rounded-sm p-6 hover:shadow-md transition-shadow relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary"></div>
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="h-12 w-12 bg-secondary-fixed rounded-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-fixed-variant" data-icon="description">description</span>
+</div>
+<div>
+<h3 class="font-h2 text-lg font-semibold">Q3_Quarterly_Audit_Report.pdf</h3>
+<span class="font-label-caps text-slate-400">FIN-AUDIT-2023-009</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold rounded-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                    VERIFIED
+                                </span>
+<span class="material-symbols-outlined text-slate-400 cursor-pointer" data-icon="more_vert">more_vert</span>
+</div>
+</div>
+<p class="text-body-sm text-slate-600 mb-6 max-w-lg">Comprehensive internal audit of the financial quarter including risk assessments and regulatory compliance checks for regional branches.</p>
+<div class="flex items-center justify-between border-t border-slate-100 pt-4">
+<div class="flex gap-4">
+<div>
+<p class="font-label-caps text-slate-400 mb-1 uppercase">Date Uploaded</p>
+<p class="text-xs font-semibold">Oct 12, 2023</p>
+</div>
+<div>
+<p class="font-label-caps text-slate-400 mb-1 uppercase">Size</p>
+<p class="text-xs font-semibold">12.4 MB</p>
+</div>
+<div>
+<p class="font-label-caps text-slate-400 mb-1 uppercase">Pages</p>
+<p class="text-xs font-semibold">42</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex -space-x-2">
+<div class="h-6 w-6 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="portrait of a professional male auditor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIbs_1eV3Dd5X13Zfadd9_zrvKFzRdJLLloGBOmZR4yAR5pvCzDYLMdOkDsUmZJSTdAnKAyhs4QUlwXx5e2VuNn8S84lGvNupgu8Fvwv_npj1DH3itnUJ-MYfSI4BGE9-JuK8R_M7OQUQjr2XFQ_cXqhRUP-JQZdWrVN1PNp6YW-r6pMHg11RYaJaAFH3E74KB_YS3aGpsPUud5E7-JJvc5p92zF74ZtfU6_MtIa1uGuTl3g4mGTX7dRcbLJem1_8MDus5-Pdocg"/>
+</div>
+<div class="h-6 w-6 rounded-full border-2 border-white bg-slate-300 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="portrait of a professional female financial analyst" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbn7LZuj88fFrKsyQZN38kR4Hb3KuyFypFpygYtG5D_WajBe2HMtO3Bv3KUYBEUqPFPYcVRJo2D5VKaI7qjyhWNykYIKR8ioC88vASPxCGDdkyK0XEU55khPHgkIjLGfGGK8NaM0biOouvH22VmGXIKVBe5NZCRq6DbqWxetCmyKWJ2dTJ6DJT49VqyAVrWC92lwBOwcgFbMv4ODL3XhKNKJrQ4fNlt5ltXYjN-TypJ2kyfDwwlQdrn0ozscaIhCgL79_-h29eZQ"/>
+</div>
+</div>
+<span class="text-[10px] text-slate-400">+2 Shared</span>
+</div>
+</div>
+</div>
+<!-- Analysis Card -->
+<div class="col-span-4 bg-primary-container text-white rounded-sm p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-label-caps tracking-widest text-on-primary-container">AI INSIGHTS</span>
+</div>
+<h4 class="text-lg font-semibold mb-2">Automated Risk Score</h4>
+<div class="flex items-end gap-2 mb-4">
+<span class="text-4xl font-bold text-tertiary-fixed-dim">98</span>
+<span class="text-xs text-on-primary-container mb-2">/100</span>
+</div>
+<p class="text-xs text-on-primary-container leading-relaxed">Systematic analysis indicates low exposure risk. No critical discrepancies detected in last 24 documents.</p>
+</div>
+<button class="w-full py-2 bg-on-primary-fixed-variant text-white font-semibold text-xs rounded-sm mt-4 hover:bg-slate-700">View Full Analysis</button>
+</div>
+<!-- Standard Grid Item 2 -->
+<div class="col-span-4 bg-white border border-slate-200 rounded-sm p-5 hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-3">
+<div class="h-10 w-10 bg-slate-100 rounded-sm flex items-center justify-center group-hover:bg-secondary-fixed transition-colors">
+<span class="material-symbols-outlined text-slate-600" data-icon="table_chart">table_chart</span>
+</div>
+<span class="material-symbols-outlined text-slate-300" data-icon="open_in_new">open_in_new</span>
+</div>
+<h4 class="font-semibold text-sm mb-1 truncate">FY23_Balance_Sheet.xlsx</h4>
+<p class="font-label-caps text-slate-400 text-[10px]">Financial Data • 1.2 MB</p>
+<div class="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
+<span class="text-[10px] font-bold text-on-tertiary-container bg-tertiary-fixed-dim/20 px-1.5 py-0.5 rounded">STABLE</span>
+<span class="text-[10px] text-slate-400 italic">2 hours ago</span>
+</div>
+</div>
+<!-- Standard Grid Item 3 -->
+<div class="col-span-4 bg-white border border-slate-200 rounded-sm p-5 hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-3">
+<div class="h-10 w-10 bg-slate-100 rounded-sm flex items-center justify-center group-hover:bg-secondary-fixed transition-colors">
+<span class="material-symbols-outlined text-slate-600" data-icon="policy">policy</span>
+</div>
+<span class="material-symbols-outlined text-slate-300" data-icon="open_in_new">open_in_new</span>
+</div>
+<h4 class="font-semibold text-sm mb-1 truncate">Compliance_Framework_V2.pdf</h4>
+<p class="font-label-caps text-slate-400 text-[10px]">Legal • 8.5 MB</p>
+<div class="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
+<span class="text-[10px] font-bold text-on-error-container bg-error-container/40 px-1.5 py-0.5 rounded">UPDATED</span>
+<span class="text-[10px] text-slate-400 italic">Oct 11, 2023</span>
+</div>
+</div>
+<!-- Standard Grid Item 4 -->
+<div class="col-span-4 bg-white border border-slate-200 rounded-sm p-5 hover:border-secondary transition-colors cursor-pointer group">
+<div class="flex justify-between items-start mb-3">
+<div class="h-10 w-10 bg-slate-100 rounded-sm flex items-center justify-center group-hover:bg-secondary-fixed transition-colors">
+<span class="material-symbols-outlined text-slate-600" data-icon="receipt_long">receipt_long</span>
+</div>
+<span class="material-symbols-outlined text-slate-300" data-icon="open_in_new">open_in_new</span>
+</div>
+<h4 class="font-semibold text-sm mb-1 truncate">Tax_Invoice_Batch_104.zip</h4>
+<p class="font-label-caps text-slate-400 text-[10px]">Invoices • 45 MB</p>
+<div class="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
+<span class="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">PENDING</span>
+<span class="text-[10px] text-slate-400 italic">Oct 10, 2023</span>
+</div>
+</div>
+</div>
+<!-- Recent Activity Document List -->
+<div class="mt-12">
+<h3 class="font-label-caps text-slate-400 mb-4 uppercase tracking-widest">Recent Activity</h3>
+<div class="bg-white border border-slate-200 rounded-sm divide-y divide-slate-100">
+<div class="flex items-center justify-between p-4 hover:bg-slate-50 cursor-pointer">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400" data-icon="history">history</span>
+<div>
+<p class="text-sm font-semibold">Updated Liability Report</p>
+<p class="text-[10px] text-slate-400">Modified by Rajesh K. • 14:20 PM</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-300" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-4 hover:bg-slate-50 cursor-pointer">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400" data-icon="share">share</span>
+<div>
+<p class="text-sm font-semibold">Shared 'Investment_Projections.pdf'</p>
+<p class="text-[10px] text-slate-400">Shared with Compliance Team • 11:05 AM</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-300" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Side: Side-by-Side Preview (Fixed Width) -->
+<section class="w-[500px] flex flex-col bg-slate-50 border-l border-slate-200 relative">
+<!-- Preview Header -->
+<div class="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="description">description</span>
+<span class="text-xs font-bold truncate max-w-[150px]">Q3_Quarterly_Audit_Report.pdf</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-500">
+<span class="material-symbols-outlined text-sm" data-icon="zoom_in">zoom_in</span>
+</button>
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-500">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+</button>
+<button class="p-1.5 hover:bg-slate-100 rounded text-slate-500">
+<span class="material-symbols-outlined text-sm" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Document View Area -->
+<div class="flex-1 overflow-y-auto p-4 bg-slate-200/50 hide-scrollbar flex flex-col gap-4">
+<!-- Page Simulation -->
+<div class="bg-white shadow-sm min-h-[400px] w-full p-8 relative">
+<div class="absolute right-8 top-8 opacity-10">
+<span class="material-symbols-outlined text-6xl" data-icon="lock">lock</span>
+</div>
+<h2 class="text-xl font-bold mb-6 text-slate-900 border-b pb-4">Internal Audit Summary</h2>
+<div class="space-y-4">
+<div class="h-4 bg-slate-100 w-3/4 rounded-full"></div>
+<div class="h-4 bg-slate-100 w-full rounded-full"></div>
+<div class="h-4 bg-slate-100 w-5/6 rounded-full"></div>
+<div class="h-4 bg-slate-100 w-2/3 rounded-full"></div>
+<div class="mt-8 grid grid-cols-2 gap-4">
+<div class="h-20 bg-slate-50 border border-slate-100 rounded-sm p-2">
+<div class="h-2 w-12 bg-slate-200 rounded-full mb-2"></div>
+<div class="h-6 w-full bg-slate-100 rounded-sm"></div>
+</div>
+<div class="h-20 bg-slate-50 border border-slate-100 rounded-sm p-2">
+<div class="h-2 w-12 bg-slate-200 rounded-full mb-2"></div>
+<div class="h-6 w-full bg-slate-100 rounded-sm"></div>
+</div>
+</div>
+<div class="h-4 bg-slate-100 w-full rounded-full mt-6"></div>
+<div class="h-4 bg-slate-100 w-1/2 rounded-full"></div>
+</div>
+<div class="mt-12 flex justify-center">
+<span class="text-[10px] text-slate-400">Page 1 of 42</span>
+</div>
+</div>
+</div>
+<!-- Mini Chat Panel (Fixed Bottom) -->
+<div class="h-[300px] bg-white border-t border-slate-200 flex flex-col shadow-2xl">
+<div class="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-xs" data-icon="smart_toy">smart_toy</span>
+<span class="font-label-caps text-[10px]">Vault Analysis Agent</span>
+</div>
+<span class="flex items-center gap-1 text-[10px] text-on-tertiary-container font-bold">
+<div class="h-1.5 w-1.5 rounded-full bg-tertiary-fixed-dim"></div>
+                            98% Confidence
+                        </span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<!-- AI Message -->
+<div class="flex items-start gap-3">
+<div class="h-6 w-6 rounded-sm bg-slate-100 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-xs" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div class="bg-slate-100 p-3 rounded-sm text-xs leading-relaxed max-w-[90%]">
+                                I've indexed this audit report. Would you like me to highlight the **key discrepancies** found in Section 4.2 or generate a **summary of recommendations**?
+                            </div>
+</div>
+<!-- Human Message -->
+<div class="flex items-start gap-3 justify-end">
+<div class="bg-secondary-container text-white p-3 rounded-sm text-xs leading-relaxed max-w-[90%]">
+                                Please summarize the recommendations for the retail banking division.
+                            </div>
+</div>
+</div>
+<!-- Chat Input -->
+<div class="p-3 border-t border-slate-100">
+<div class="relative flex items-center">
+<input class="w-full bg-slate-50 border border-slate-200 rounded-sm py-2 px-3 pr-10 text-xs focus:ring-1 focus:ring-secondary focus:border-secondary outline-none" placeholder="Ask about this document..." type="text"/>
+<button class="absolute right-2 text-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

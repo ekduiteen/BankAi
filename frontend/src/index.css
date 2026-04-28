@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply text-on-surface;
+  }
+
+  body {
+    @apply bg-surface font-inter antialiased;
+    min-height: 100vh;
+  }
+
+  /* Material Symbols icon font */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    display: inline-block;
+    vertical-align: middle;
+    user-select: none;
+  }
+
+  /* Slim scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Hide scrollbar utility */
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@layer components {
+  /* Typing indicator dots */
+  .typing-dot {
+    animation: blink 1.4s infinite both;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Enterprise card base */
+  .card {
+    @apply bg-white border border-slate-200 rounded-lg;
+  }
+
+  /* Left-border status accent */
+  .card-accent-blue  { @apply border-l-4 border-l-secondary; }
+  .card-accent-green { @apply border-l-4 border-l-tertiary-fixed-dim; }
+  .card-accent-red   { @apply border-l-4 border-l-error; }
+
+  /* Status badge variants */
+  .badge-verified  { @apply inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-on-tertiary-container border border-green-100 rounded text-[10px] font-bold uppercase; }
+  .badge-critical  { @apply inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-error border border-red-100 rounded text-[10px] font-bold uppercase; }
+  .badge-processing{ @apply inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-secondary border border-blue-100 rounded text-[10px] font-bold uppercase; }
+  .badge-pending   { @apply inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded text-[10px] font-bold uppercase; }
+  .badge-approved  { @apply inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-on-tertiary-container border border-green-100 rounded text-[10px] font-bold uppercase; }
+  .badge-failed    { @apply inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-error border border-red-100 rounded text-[10px] font-bold uppercase; }
+  .badge-ready     { @apply inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-on-tertiary-container border border-green-100 rounded text-[10px] font-bold uppercase; }
+  .badge-indexed   { @apply inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-secondary border border-blue-100 rounded text-[10px] font-bold uppercase; }
+
+  /* Primary action button */
+  .btn-primary {
+    @apply bg-primary text-white font-semibold text-sm px-4 py-2 rounded shadow-sm
+           hover:opacity-90 active:scale-95 transition-all;
+  }
+
+  /* Secondary outline button */
+  .btn-secondary {
+    @apply bg-white border border-slate-300 text-on-surface font-semibold text-sm px-4 py-2 rounded
+           hover:bg-slate-50 active:scale-95 transition-all;
+  }
+
+  /* Label caps */
+  .label-caps {
+    @apply text-label-caps font-label-caps uppercase tracking-widest;
+  }
+
+  /* Confidence bar */
+  .confidence-bar {
+    @apply w-16 h-1 bg-slate-100 rounded-full overflow-hidden;
+  }
+}
+
+/* Streaming cursor blink */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: #0051d5;
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: cursor-blink 0.8s ease-in-out infinite;
+}
