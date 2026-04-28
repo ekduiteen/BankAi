@@ -47,23 +47,31 @@ export default function TopBar({ language, onLanguageChange }) {
       {/* Right: bilingual toggle + icons + avatar */}
       <div className="flex items-center gap-4">
         {/* Bilingual switcher */}
-        <div className="flex items-center bg-slate-100 rounded p-1">
+        <div className="flex items-center bg-slate-100 rounded p-1 gap-1">
           <button
-            onClick={() => onLanguageChange?.('en')}
-            className={`px-3 py-1 text-xs font-bold rounded transition-all ${
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onLanguageChange('en');
+            }}
+            className={`px-3 py-1 text-xs font-bold rounded transition-all cursor-pointer ${
               language === 'en'
                 ? 'bg-white shadow-sm text-slate-900'
-                : 'text-slate-500 hover:text-slate-700'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'
             }`}
           >
             EN
           </button>
           <button
-            onClick={() => onLanguageChange?.('np')}
-            className={`px-3 py-1 text-xs font-bold rounded transition-all ${
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onLanguageChange('np');
+            }}
+            className={`px-3 py-1 text-xs font-bold rounded transition-all cursor-pointer ${
               language === 'np'
                 ? 'bg-white shadow-sm text-slate-900'
-                : 'text-slate-500 hover:text-slate-700'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'
             }`}
           >
             ने

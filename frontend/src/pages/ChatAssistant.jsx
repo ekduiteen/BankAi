@@ -154,12 +154,29 @@ export default function ChatAssistant() {
   // ── File upload ──────────────────────────────────────────────────────────
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
-    if (!file || !sessionId) return;
+    if (!file) return;
+
+    // Create session if needed
+    if (!sessionId) {
+      try {
+        const r = await api.post('/chat/sessions', { title: 'New Analysis' });
+        setSessionId(r.data.id);
+      } catch (err) {
+        console.error('Failed to create session', err);
+        setActiveDocuments(prev => [...prev, {
+          id: `tmp-${Date.now()}`, name: file.name, status: 'failed',
+          processing_message: 'Failed to create session.',
+        }]);
+        return;
+      }
+    }
+
     const tmpId = `tmp-${Date.now()}`;
     setActiveDocuments(prev => [...prev, {
       id: tmpId, name: file.name, status: 'uploading',
       processing_progress: 0, processing_message: 'Uploading document...',
     }]);
+
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -167,10 +184,14 @@ export default function ChatAssistant() {
       setActiveDocuments(prev =>
         prev.map(d => d.id === tmpId ? { ...d, ...r.data, name: file.name } : d)
       );
-    } catch (_) {
+    } catch (err) {
+      console.error('File upload error:', err.response?.data || err.message);
       setActiveDocuments(prev =>
         prev.map(d => d.id === tmpId
-          ? { ...d, status: 'failed', processing_message: 'Upload failed.' } : d)
+          ? {
+              ...d, status: 'failed',
+              processing_message: err.response?.data?.detail || 'Upload failed.'
+            } : d)
       );
     }
     if (fileRef.current) fileRef.current.value = '';
