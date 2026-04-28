@@ -10,15 +10,15 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Set Content-Type for non-FormData requests
-    // For FormData, let axios/browser handle it automatically with boundary
-    if (config.data instanceof FormData) {
-      // Don't set Content-Type for FormData - let browser handle it with proper boundary
-      delete config.headers['Content-Type'];
-      config.headers['Content-Type'] = undefined;
-      console.log('Sending FormData upload:', config.method, config.url);
-    } else {
+
+    // Only set Content-Type for JSON requests
+    // For FormData, axios will automatically set multipart/form-data with boundary
+    if (!(config.data instanceof FormData)) {
       config.headers['Content-Type'] = 'application/json';
+    }
+
+    if (config.data instanceof FormData) {
+      console.log('Sending FormData upload:', config.method, config.url, config.data);
     }
     return config;
   },
