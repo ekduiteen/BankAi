@@ -29,7 +29,7 @@ export default function Landing() {
 
       <main className="pt-16">
         {/* Hero Section */}
-        <section className="relative py-24 px-8 overflow-hidden">
+        <section className="relative py-16 px-6 overflow-hidden">
           <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
             <div className="z-10">
               <span className="font-label-caps text-label-caps text-secondary mb-4 block">SECURE ENTERPRISE AI</span>
@@ -62,7 +62,7 @@ export default function Landing() {
         </section>
 
         {/* Trust Line */}
-        <section className="bg-primary-container py-12 px-8">
+        <section className="bg-primary-container py-8 px-6">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-4">
               <span className="material-symbols-outlined text-tertiary-fixed-dim text-4xl">shield_lock</span>
@@ -75,9 +75,9 @@ export default function Landing() {
         </section>
 
         {/* Core Value Cards - Bento Grid */}
-        <section className="py-24 px-8 bg-surface">
+        <section className="py-16 px-6 bg-surface">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12">
               <span className="font-label-caps text-label-caps text-secondary">ARCHITECTURAL PILLARS</span>
               <h2 className="font-h2 text-h2 mt-2">Engineered for Sovereign Intelligence</h2>
             </div>
@@ -112,9 +112,9 @@ export default function Landing() {
         </section>
 
         {/* How It Works */}
-        <section className="py-24 px-8 bg-surface-container-low">
+        <section className="py-16 px-6 bg-surface-container-low">
           <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col items-center text-center mb-16">
+            <div className="flex flex-col items-center text-center mb-12">
               <h2 className="font-h2 text-h2">The Intelligence Lifecycle</h2>
               <div className="h-1 w-20 bg-secondary mt-4"></div>
             </div>
@@ -143,8 +143,8 @@ export default function Landing() {
         </section>
 
         {/* ChatGPT-Like Interaction */}
-        <section className="py-24 px-8">
-          <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
+        <section className="py-16 px-6">
+          <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
             <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
                 <div className="flex gap-2">
@@ -223,18 +223,18 @@ export default function Landing() {
         </section>
 
         {/* Vision Intelligence */}
-        <section className="py-24 px-8 bg-primary-container text-white">
+        <section className="py-16 px-6 bg-primary-container text-white">
           <div className="max-w-7xl mx-auto text-center">
-            <h2 className="font-h2 text-h2 mb-12">Vision-Enabled Intelligence</h2>
+            <h2 className="font-h2 text-h2 mb-8">Vision-Enabled Intelligence</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                { icon: 'visibility', title: 'Hybrid OCR Engine', desc: 'Powered by PaddleOCR and Surya, delivering 99.9% accuracy on handwritten notes, blurry scans, and complex layouts.' },
-                { icon: 'draft', title: 'Multi-Format Native', desc: 'Direct ingestion of PDF, DOCX, XLSX, TXT, and scanned images without external conversion tools.' },
-                { icon: 'architecture', title: 'Layout Awareness', desc: 'Understands headers, footers, charts, and nested tables for contextually accurate extractions.' }
+                { icon: 'visibility', title: 'Hybrid OCR Engine', desc: '99.9% accuracy on handwritten notes, blurry scans, and complex layouts.' },
+                { icon: 'draft', title: 'Multi-Format Native', desc: 'Direct ingestion of PDF, DOCX, XLSX, TXT, and scanned images.' },
+                { icon: 'architecture', title: 'Layout Awareness', desc: 'Understands headers, footers, charts, and nested tables for accurate extractions.' }
               ].map((item) => (
-                <div key={item.title} className="p-8 bg-white/5 rounded border border-white/10">
-                  <span className="material-symbols-outlined text-4xl mb-4">{item.icon}</span>
-                  <h4 className="text-xl font-bold mb-4">{item.title}</h4>
+                <div key={item.title} className="p-6 bg-white/5 rounded border border-white/10">
+                  <span className="material-symbols-outlined text-3xl mb-3">{item.icon}</span>
+                  <h4 className="text-lg font-bold mb-2">{item.title}</h4>
                   <p className="text-slate-300 text-sm">{item.desc}</p>
                 </div>
               ))}
@@ -243,7 +243,7 @@ export default function Landing() {
         </section>
 
         {/* Security & Privacy */}
-        <section className="py-24 px-8 bg-surface-container-high">
+        <section className="py-16 px-6 bg-surface-container-high">
           <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12">
               <div className="bg-white p-12 rounded-xl border border-slate-200 shadow-sm">
@@ -281,9 +281,9 @@ export default function Landing() {
         </section>
 
         {/* Infrastructure Specs */}
-        <section className="py-24 px-8 bg-white">
+        <section className="py-16 px-6 bg-white">
           <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
+            <div className="text-center mb-12">
               <h2 className="font-h2 text-h2">Hardware & Model Specs</h2>
               <p className="text-on-surface-variant">Enterprise-grade performance without compromise.</p>
             </div>
@@ -305,9 +305,9 @@ export default function Landing() {
         </section>
 
         {/* Onboarding Steps */}
-        <section className="py-24 px-8 bg-surface-container-lowest">
+        <section className="py-16 px-6 bg-surface-container-lowest">
           <div className="max-w-5xl mx-auto">
-            <h2 className="font-h2 text-h2 text-center mb-16">Institutional Setup</h2>
+            <h2 className="font-h2 text-h2 text-center mb-12">Institutional Setup</h2>
             <div className="space-y-12">
               {[
                 { num: '01', title: 'Physical Provisioning', desc: 'BankAi Server is delivered as a pre-configured rack-mount appliance to your data center.' },
@@ -329,10 +329,10 @@ export default function Landing() {
         </section>
 
         {/* Final CTA */}
-        <section className="py-24 px-8 relative overflow-hidden bg-primary-container text-white">
+        <section className="py-16 px-6 relative overflow-hidden bg-primary-container text-white">
           <div className="max-w-7xl mx-auto text-center relative z-10">
-            <h2 className="font-h1 text-h1 mb-8">Give Your Bank Its Own AI Document Intelligence Server</h2>
-            <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto">
+            <h2 className="font-h1 text-h1 mb-6">Give Your Bank Its Own AI Document Intelligence Server</h2>
+            <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
               Empower your analysts with secure, private, and audit-ready intelligence. Schedule a consultation with our enterprise architects.
             </p>
             <div className="flex flex-wrap justify-center gap-6">
@@ -351,7 +351,7 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full border-t mt-20 bg-slate-50 border-slate-200 text-sm font-public-sans">
+      <footer className="w-full border-t mt-12 bg-slate-50 border-slate-200 text-sm font-public-sans">
         <div className="flex flex-col md:flex-row justify-between items-center py-12 px-8 max-w-7xl mx-auto gap-6">
           <div className="flex flex-col items-center md:items-start">
             <span className="text-lg font-bold text-slate-900">BankAi Enterprise</span>
