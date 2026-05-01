@@ -90,7 +90,10 @@ services:
     image: vllm/vllm-openai:latest
     container_name: bankai-vllm-a
     restart: always
-    command: vllm serve /llm-models/qwen2.5-7b-awq --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.35 --max-model-len 8192 --max-num-seqs 32 --served-model-name qwen2.5-7b --enable-prefix-caching
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - "vllm serve /llm-models/qwen2.5-7b-awq --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.35 --max-model-len 8192 --max-num-seqs 32 --served-model-name qwen2.5-7b --enable-prefix-caching"
     volumes:
       - /home/ekduiteen/llm-models:/llm-models
     ports:
@@ -107,7 +110,10 @@ services:
     image: vllm/vllm-openai:latest
     container_name: bankai-vllm-b
     restart: always
-    command: vllm serve /llm-models/qwen3-32b-awq --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.50 --max-model-len 6144 --max-num-seqs 16 --served-model-name qwen3-32b --enable-prefix-caching
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - "vllm serve /llm-models/qwen3-32b-awq --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.50 --max-model-len 6144 --max-num-seqs 16 --served-model-name qwen3-32b --enable-prefix-caching"
     volumes:
       - /home/ekduiteen/llm-models:/llm-models
     ports:
