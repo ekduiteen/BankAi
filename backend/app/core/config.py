@@ -28,9 +28,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
 
-    ALLOWED_ORIGINS: list[str] = _parse_origins(
-        os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:80,http://localhost")
-    )
+    ALLOWED_ORIGINS_RAW: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:80,http://localhost")
+
+    @property
+    def ALLOWED_ORIGINS(self) -> list[str]:
+        return _parse_origins(self.ALLOWED_ORIGINS_RAW)
 
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/bankai")
 
