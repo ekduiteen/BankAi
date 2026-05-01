@@ -92,6 +92,7 @@ services:
     restart: always
     command:
       - serve
+      - --model
       - /llm-models/qwen2.5-7b-awq
       - --host
       - "0.0.0.0"
@@ -124,6 +125,7 @@ services:
     restart: always
     command:
       - serve
+      - --model
       - /llm-models/qwen3-32b-awq
       - --host
       - "0.0.0.0"
