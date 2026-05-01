@@ -133,6 +133,26 @@ services:
               count: 1
               capabilities: [gpu]
 
+  vllm-c:
+    image: vllm/vllm-openai:latest
+    container_name: bankai-vllm-c
+    restart: 'no'
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - "vllm serve /data/models/llm/gemma-4-26b-a4b --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.50 --max-model-len 8192 --max-num-seqs 8 --served-model-name gemma-4-26b --enable-prefix-caching"
+    volumes:
+      - /data:/data
+    ports:
+      - "8003:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
 volumes:
   postgres_data:
   qdrant_data:
