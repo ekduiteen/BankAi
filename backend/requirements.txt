@@ -5,7 +5,6 @@ psycopg2-binary
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
-bcrypt==3.2.0
 qdrant-client
 sentence-transformers
 minio
@@ -22,3 +21,6 @@ pytest-asyncio
 python-dotenv
 openpyxl
 python-pptx
+slowapi
+limits
+reportlab

@@ -1,9 +1,11 @@
 from typing import Any, List, Optional
+from pathlib import Path
+import os
+import uuid
+import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlmodel import Session, select
-from sqlalchemy import or_, and_
-import os
-import shutil
+from sqlalchemy import or_, and_, delete as sa_delete
 
 from ..db.session import get_session
 from ..core.config import settings
@@ -44,20 +46,23 @@ async def upload_document(
         else:
             raise HTTPException(status_code=500, detail="User has no bank assigned and no default bank exists")
 
-    if not file.filename.lower().endswith(('.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.pptx', '.ppt')):
+    ALLOWED = {'.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.pptx', '.ppt'}
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED:
         raise HTTPException(status_code=400, detail="Supported files: PDF, DOCX, TXT, JPG, PNG, XLSX, PPTX")
 
     ensure_upload_dir()
-    file_path = os.path.join(UPLOAD_DIR, f"{current_user.bank_id}_{file.filename}")
+    safe_name = f"{current_user.bank_id}_{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(UPLOAD_DIR, safe_name)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-        
+
     doc = Document(
         bank_id=current_user.bank_id,
         uploaded_by=current_user.id,
         title=title,
         file_name=file.filename,
-        file_type=file.filename.split('.')[-1],
+        file_type=ext.lstrip("."),
         file_path=file_path,
         document_type=document_type,
         department=department,
@@ -78,8 +83,8 @@ async def upload_document(
         metadata={"file_name": doc.file_name, "title": doc.title}
     )
     
-    background_tasks.add_task(process_document, doc.id, db)
-    
+    background_tasks.add_task(process_document, doc.id)
+
     return doc
 
 @router.get("", response_model=List[DocumentResponse])
@@ -197,21 +202,45 @@ def delete_document(
     document_id: int,
     current_user: User = Depends(get_current_bank_admin),
 ) -> Any:
+    from ..models.document import DocumentChunk
+    from ..services.qdrant_service import delete_points_by_document
+
     doc = db.get(Document, document_id)
     if not doc or doc.bank_id != current_user.bank_id:
         raise HTTPException(status_code=404, detail="Document not found")
-        
+
+    file_name = doc.file_name
+    file_path = doc.file_path
+    doc_id = doc.id
+    bank_id = doc.bank_id
+
+    # Delete Qdrant vectors
+    try:
+        delete_points_by_document(doc_id, bank_id)
+    except Exception:
+        pass
+
+    # Delete chunk records
+    db.exec(sa_delete(DocumentChunk).where(DocumentChunk.document_id == doc_id))
+
+    # Delete physical file
+    if file_path and os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except Exception:
+            pass
+
     db.delete(doc)
     db.commit()
-    
+
     log_audit_event(
         db=db,
         action="delete",
         resource_type="document",
-        resource_id=str(doc.id),
+        resource_id=str(doc_id),
         bank_id=current_user.bank_id,
         user_id=current_user.id,
-        metadata={"file_name": doc.file_name}
+        metadata={"file_name": file_name}
     )
-    
+
     return {"message": "Document deleted"}

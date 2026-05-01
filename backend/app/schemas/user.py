@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from datetime import datetime
+
 
 class UserBase(BaseModel):
     name: str
@@ -9,9 +10,22 @@ class UserBase(BaseModel):
     department: Optional[str] = None
     is_active: Optional[bool] = True
 
+
 class UserCreate(UserBase):
     password: str
     bank_id: int
+
+    @field_validator('password')
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        if not any(c.isupper() for c in v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not any(c.isdigit() for c in v):
+            raise ValueError('Password must contain at least one digit')
+        return v
+
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -21,10 +35,11 @@ class UserUpdate(BaseModel):
     department: Optional[str] = None
     is_active: Optional[bool] = None
 
+
 class UserResponse(UserBase):
     id: int
     bank_id: Optional[int] = None
     created_at: datetime
-    
+
     class Config:
-        orm_mode = True
+        from_attributes = True

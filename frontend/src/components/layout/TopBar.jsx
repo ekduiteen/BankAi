@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import api from '../../api/axios';
 
 const TOP_NAV = [
   { label: 'Analysis',   to: '/chat' },
@@ -12,8 +13,8 @@ export default function TopBar({ language, onLanguageChange }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const initials = (user.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  const handleLogout = async () => {
+    try { await api.post('/auth/logout'); } catch (_) {}
     localStorage.removeItem('user');
     navigate('/login');
   };

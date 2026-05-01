@@ -1,16 +1,28 @@
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
+from pathlib import Path
+import os
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 import json
 import httpx
+from ..core.limiter import limiter
+
+ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.pptx', '.ppt'}
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
+
+
+def _safe_filename(session_id: int, original: str) -> str:
+    ext = Path(original).suffix.lower()
+    return f"{session_id}_{uuid.uuid4().hex}{ext}"
 
 from ..db.session import get_session
 from ..models.user import User
 from ..models.chat import ChatSession, ChatMessage
 from ..schemas.chat import ChatSessionCreate, ChatSessionResponse, ChatRequest, ChatMessageResponse
 from .deps import get_current_user
-from ..services.rag_service import generate_rag_response, get_system_identity, RAG_PROMPT_TEMPLATE, GENERAL_PROMPT_TEMPLATE
+from ..services.rag_service import generate_rag_response, async_generate_rag_response, get_system_identity, RAG_PROMPT_TEMPLATE, GENERAL_PROMPT_TEMPLATE
 from ..services.audit_service import log_audit_event
 from ..services.guardrail_service import detect_prompt_injection, detect_and_mask_pii
 from ..services.query_rewrite_service import rewrite_query_for_retrieval
@@ -149,7 +161,9 @@ def read_chat_messages(
     return messages
 
 @router.post("/sessions/{session_id}/messages")
-def create_chat_message(
+@limiter.limit("30/minute")
+async def create_chat_message(
+    request: Request,
     *,
     db: Session = Depends(get_session),
     session_id: int,
@@ -159,11 +173,11 @@ def create_chat_message(
     session = db.get(ChatSession, session_id)
     if not session or session.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Session not found")
-        
+
     # 1. Guardrail checks
     if detect_prompt_injection(chat_request.message, db, current_user.id, current_user.bank_id):
         raise HTTPException(status_code=400, detail="Query rejected due to security policy.")
-        
+
     safe_message = detect_and_mask_pii(chat_request.message)
 
     # 2. Save user message
@@ -177,20 +191,23 @@ def create_chat_message(
     db.add(user_msg)
     db.commit()
     _maybe_update_session_title(session, safe_message, db)
-    
+
     from sqlalchemy import asc
-    history = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(asc(ChatMessage.created_at)).all()
+    history = db.exec(
+        select(ChatMessage).where(ChatMessage.session_id == session_id)
+        .order_by(asc(ChatMessage.created_at)).limit(20)
+    ).all()
     retrieval_query = rewrite_query_for_retrieval(safe_message, history[:-1])
 
-    # 3. Build prompt
+    # 3. Build prompt and call LLM async
     sys_identity = get_system_identity(chat_request.language)
     if chat_request.image:
-        from ..services.llm_service import call_vision_llm
-        answer = call_vision_llm(f"{sys_identity}\n\n{chat_request.message}", chat_request.image)
+        from ..services.llm_service import async_call_vision_llm
+        answer = await async_call_vision_llm(f"{sys_identity}\n\n{chat_request.message}", chat_request.image)
         sources = []
     else:
         active_doc_ids = _session_active_document_ids(session, chat_request.active_document_ids)
-        answer, sources = generate_rag_response(
+        answer, sources = await async_generate_rag_response(
             retrieval_query,
             current_user.bank_id,
             current_user.role,
@@ -234,7 +251,9 @@ def create_chat_message(
     return ai_msg
 
 @router.post("/sessions/{session_id}/stream")
+@limiter.limit("30/minute")
 def stream_chat_message(
+    request: Request,
     *,
     db: Session = Depends(get_session),
     session_id: int,
@@ -266,7 +285,10 @@ def stream_chat_message(
     _maybe_update_session_title(session, safe_message, db)
     
     from sqlalchemy import asc
-    history = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(asc(ChatMessage.created_at)).all()
+    history = db.exec(
+        select(ChatMessage).where(ChatMessage.session_id == session_id)
+        .order_by(asc(ChatMessage.created_at)).limit(20)
+    ).all()
     retrieval_query = rewrite_query_for_retrieval(safe_message, history[:-1])
 
     # Resolve active session document IDs for session-aware RAG
@@ -453,20 +475,28 @@ async def upload_session_file(
     Upload a file to a specific chat session for background processing.
     """
     from ..models.document import Document
-    import os, shutil
-    
+    import shutil
+
     session = db.get(ChatSession, session_id)
     if not session or session.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Session not found")
-        
-    upload_dir = CHAT_UPLOAD_DIR
+
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"File type '{ext}' not supported")
+
     ensure_chat_upload_dir()
-    file_ext = file.filename.split('.')[-1].lower()
-    file_path = os.path.join(upload_dir, f"{session_id}_{file.filename}")
-    
+    safe_name = _safe_filename(session_id, file.filename)
+    file_path = os.path.join(CHAT_UPLOAD_DIR, safe_name)
+
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-        
+
+    if os.path.getsize(file_path) > MAX_UPLOAD_BYTES:
+        os.remove(file_path)
+        raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+
+    file_ext = ext.lstrip(".")
     doc = Document(
         bank_id=current_user.bank_id,
         uploaded_by=current_user.id,
@@ -482,11 +512,11 @@ async def upload_session_file(
     db.add(doc)
     db.commit()
     db.refresh(doc)
-    
+
     _track_session_document(session, doc.id, db)
-        
+
     from ..services.ingestion_service import process_document
-    background_tasks.add_task(process_document, doc.id, db)
+    background_tasks.add_task(process_document, doc.id)
     
     return {
         "id": doc.id,
@@ -512,22 +542,29 @@ async def stream_chat_with_file(
     Upload a file and stream AI analysis of its contents.
     Supports PDF, DOCX, XLSX, PPTX, TXT, and images.
     """
-    import os, shutil, base64
+    import shutil, base64
     from ..models.document import Document
-    
+
     session = db.get(ChatSession, session_id)
     if not session or session.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Session not found")
-    
-    # Save the uploaded file durably enough for background indexing.
-    upload_dir = CHAT_UPLOAD_DIR
+
+    ext = Path(file.filename).suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"File type '{ext}' not supported")
+
     ensure_chat_upload_dir()
-    file_ext = file.filename.split('.')[-1].lower()
-    file_path = os.path.join(upload_dir, f"{session_id}_{file.filename}")
+    safe_name = _safe_filename(session_id, file.filename)
+    file_path = os.path.join(CHAT_UPLOAD_DIR, safe_name)
     
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    if os.path.getsize(file_path) > MAX_UPLOAD_BYTES:
+        os.remove(file_path)
+        raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+
+    file_ext = ext.lstrip(".")
     doc = Document(
         bank_id=current_user.bank_id,
         uploaded_by=current_user.id,
@@ -544,7 +581,7 @@ async def stream_chat_with_file(
     db.commit()
     db.refresh(doc)
     _track_session_document(session, doc.id, db)
-    
+
     # Save user message
     user_msg = ChatMessage(
         bank_id=current_user.bank_id,
@@ -588,8 +625,8 @@ async def stream_chat_with_file(
         ollama_messages[-1]["content"] = f"I have uploaded a file called \"{file.filename}\". Here is the extracted content:\n\n--- FILE CONTENT ---\n{extracted}\n--- END FILE CONTENT ---\n\nMy request: {message}"
     
     from ..services.ingestion_service import process_document
-    background_tasks.add_task(process_document, doc.id, db)
-    
+    background_tasks.add_task(process_document, doc.id)
+
     def event_stream():
         full_response = ""
         url = f"{settings.LLM_API_BASE}/api/chat"

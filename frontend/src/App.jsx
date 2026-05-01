@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import ChatAssistant from './pages/ChatAssistant';
 import Documents from './pages/Documents';
 import Features from './pages/Features';
+import Tasks from './pages/Tasks';
 import Users from './pages/Users';
 import AuditLogs from './pages/AuditLogs';
 import Settings from './pages/Settings';
@@ -15,13 +16,16 @@ import AdminSecurity from './pages/AdminSecurity';
 import ComplianceRisk from './pages/ComplianceRisk';
 import MainLayout from './layouts/MainLayout';
 
+// Auth is now httpOnly cookie — we use the cached user profile in localStorage
+// as a lightweight client-side indicator. If the cookie is missing/expired the
+// first protected API call returns 401 and axios redirects to /login.
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" replace />;
+  const user = localStorage.getItem('user');
+  return user ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
-  const isAuthenticated = !!localStorage.getItem('token');
+  const isAuthenticated = !!localStorage.getItem('user');
 
   return (
     <Router>
@@ -32,18 +36,19 @@ function App() {
 
         {/* Protected routes */}
         <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-          <Route path="dashboard"   element={<Dashboard />} />
-          <Route path="chat"        element={<ChatAssistant />} />
-          <Route path="documents"   element={<Documents />} />
-          <Route path="features"    element={<Features />} />
-          <Route path="sessions"    element={<SessionHistory />} />
-          <Route path="analytics"   element={<Analytics />} />
-          <Route path="users"       element={<Users />} />
-          <Route path="audit-logs"  element={<AuditLogs />} />
-          <Route path="settings"    element={<Settings />} />
-          <Route path="help"        element={<HelpCenter />} />
+          <Route path="dashboard"      element={<Dashboard />} />
+          <Route path="chat"           element={<ChatAssistant />} />
+          <Route path="documents"      element={<Documents />} />
+          <Route path="features"       element={<Features />} />
+          <Route path="tasks"          element={<Tasks />} />
+          <Route path="sessions"       element={<SessionHistory />} />
+          <Route path="analytics"      element={<Analytics />} />
+          <Route path="users"          element={<Users />} />
+          <Route path="audit-logs"     element={<AuditLogs />} />
+          <Route path="settings"       element={<Settings />} />
+          <Route path="help"           element={<HelpCenter />} />
           <Route path="admin/security" element={<AdminSecurity />} />
-          <Route path="compliance"  element={<ComplianceRisk />} />
+          <Route path="compliance"     element={<ComplianceRisk />} />
         </Route>
       </Routes>
     </Router>

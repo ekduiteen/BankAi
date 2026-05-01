@@ -17,13 +17,10 @@ export default function Login() {
       const formData = new FormData();
       formData.append('username', email);
       formData.append('password', password);
-      const res = await api.post('/auth/login', formData);
-      localStorage.setItem('token', res.data.access_token);
-      // Fetch user profile and cache it
+      await api.post('/auth/login', formData);
+      // Fetch user profile and cache it (cookie is now set by the server)
       try {
-        const me = await api.get('/auth/me', {
-          headers: { Authorization: `Bearer ${res.data.access_token}` },
-        });
+        const me = await api.get('/auth/me');
         localStorage.setItem('user', JSON.stringify(me.data));
       } catch (_) {}
       navigate('/dashboard');

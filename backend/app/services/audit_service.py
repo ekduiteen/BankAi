@@ -1,5 +1,6 @@
 from sqlmodel import Session
 from ..models.audit import AuditLog, SecurityEvent
+from ..core.context import request_ip
 import json
 from typing import Any
 
@@ -14,6 +15,7 @@ def log_audit_event(
     ip_address: str | None = None
 ):
     try:
+        resolved_ip = ip_address or request_ip.get() or None
         log = AuditLog(
             bank_id=bank_id,
             user_id=user_id,
@@ -21,7 +23,7 @@ def log_audit_event(
             resource_type=resource_type,
             resource_id=resource_id,
             metadata_json=json.dumps(metadata) if metadata else None,
-            ip_address=ip_address
+            ip_address=resolved_ip
         )
         db.add(log)
         db.commit()

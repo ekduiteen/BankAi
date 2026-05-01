@@ -5,20 +5,38 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Fail fast on missing required secrets — never start with insecure defaults
+_jwt_secret = os.getenv("JWT_SECRET")
+if not _jwt_secret:
+    raise RuntimeError("JWT_SECRET environment variable must be set")
+
+_super_admin_password = os.getenv("SUPER_ADMIN_PASSWORD")
+if not _super_admin_password:
+    raise RuntimeError("SUPER_ADMIN_PASSWORD environment variable must be set")
+
+
+def _parse_origins(raw: str) -> list[str]:
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Bank's Own LLM"
     VERSION: str = "0.1.0"
     API_V1_STR: str = "/api"
-    
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "super-secret-key-for-development-only")
+
+    JWT_SECRET: str = _jwt_secret
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
-    
+
+    ALLOWED_ORIGINS: list[str] = _parse_origins(
+        os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:80,http://localhost")
+    )
+
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/bankai")
-    
+
     QDRANT_HOST: str = os.getenv("QDRANT_HOST", "localhost")
     QDRANT_PORT: int = int(os.getenv("QDRANT_PORT", "6333"))
-    
+
     MINIO_ENDPOINT: str = os.getenv("MINIO_ENDPOINT", "localhost:9000")
     MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "admin")
     MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "password")
@@ -26,16 +44,28 @@ class Settings(BaseSettings):
 
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "bankai_uploads"))
     CHAT_UPLOAD_DIR: str = os.getenv("CHAT_UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "bankai_chat_uploads"))
-    
-    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3")
-    LLM_API_BASE: str = os.getenv("LLM_API_BASE", "http://localhost:11434")
-    LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
-    
+
+    # Primary vLLM — used for RAG, chat, complex reasoning
+    LLM_A_API_BASE: str = os.getenv("LLM_A_API_BASE", "http://localhost:8001")
+    LLM_A_MODEL: str = os.getenv("LLM_A_MODEL", "model-a")
+    LLM_A_API_KEY: str = os.getenv("LLM_A_API_KEY", "no-key")
+
+    # Secondary vLLM — used for fast tasks: summarize, translate, draft
+    LLM_B_API_BASE: str = os.getenv("LLM_B_API_BASE", "http://localhost:8002")
+    LLM_B_MODEL: str = os.getenv("LLM_B_MODEL", "model-b")
+    LLM_B_API_KEY: str = os.getenv("LLM_B_API_KEY", "no-key")
+
+    # Legacy single-LLM fields kept for backward compat (points to A by default)
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "vllm")
+    LLM_MODEL: str = os.getenv("LLM_MODEL", os.getenv("LLM_A_MODEL", "model-a"))
+    LLM_API_BASE: str = os.getenv("LLM_API_BASE", os.getenv("LLM_A_API_BASE", "http://localhost:8001"))
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY", os.getenv("LLM_A_API_KEY", "no-key"))
+
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
     EMBEDDING_DIMENSION: int = int(os.getenv("EMBEDDING_DIMENSION", "384"))
-    
+
     SUPER_ADMIN_EMAIL: str = os.getenv("SUPER_ADMIN_EMAIL", "admin@bankai.io")
-    SUPER_ADMIN_PASSWORD: str = os.getenv("SUPER_ADMIN_PASSWORD", "admin123")
+    SUPER_ADMIN_PASSWORD: str = _super_admin_password
+
 
 settings = Settings()

@@ -10,6 +10,7 @@ from ..models.document import Document, DocumentChunk
 from .embedding_service import generate_embeddings
 from .qdrant_service import upload_points
 
+
 def extract_text(file_path: str, file_type: str) -> str:
     text = ""
     ft = file_type.lower()
@@ -55,107 +56,118 @@ def extract_text(file_path: str, file_type: str) -> str:
     return text
 
 
-def process_document(document_id: int, db: Session):
-    try:
-        doc = db.get(Document, document_id)
-        if not doc:
-            return
-        
-        doc.status = "extracting_text"
-        doc.processing_progress = 10
-        doc.processing_message = "Reading document text..."
-        db.add(doc)
-        db.commit()
+def process_document(document_id: int):
+    """Background task — creates its own DB session so it is safe to run after the request ends."""
+    from ..db.session import engine
 
-        # 1. Extract text
-        text = extract_text(doc.file_path, doc.file_type)
-        
-        doc.status = "chunking"
-        doc.processing_progress = 40
-        doc.processing_message = "Preparing document for search..."
-        db.add(doc)
-        db.commit()
-        
-        # 2. Split into chunks
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len,
-        )
-        chunks = text_splitter.split_text(text)
-        
-        if not chunks:
-            doc.status = "failed"
-            doc.processing_message = "Failed to extract text."
+    with Session(engine) as db:
+        try:
+            doc = db.get(Document, document_id)
+            if not doc:
+                return
+
+            doc.status = "extracting_text"
+            doc.processing_progress = 10
+            doc.processing_message = "Reading document text..."
             db.add(doc)
             db.commit()
-            return
 
-        doc.status = "embedding"
-        doc.processing_progress = 60
-        doc.processing_message = "Creating secure document index..."
-        db.add(doc)
-        db.commit()
+            # 1. Extract text
+            text = extract_text(doc.file_path, doc.file_type)
 
-        # 3. Generate embeddings
-        embeddings = generate_embeddings(chunks)
-        
-        # 4. Store in Qdrant and DB
-        points = []
-        for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
-            point_id = str(uuid.uuid4())
-            
-            # DB entry
-            chunk_db = DocumentChunk(
-                bank_id=doc.bank_id,
-                document_id=doc.id,
-                chunk_index=i,
-                chunk_text=chunk_text,
-                qdrant_point_id=point_id
+            doc.status = "chunking"
+            doc.processing_progress = 40
+            doc.processing_message = "Preparing document for search..."
+            db.add(doc)
+            db.commit()
+
+            # 2. Split into chunks
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000,
+                chunk_overlap=200,
+                length_function=len,
             )
-            db.add(chunk_db)
-            
-            # Qdrant point
-            payload = {
-                "bank_id": doc.bank_id,
-                "document_id": doc.id,
-                "chunk_index": i,
-                "text": chunk_text,
-                "document_scope": doc.document_scope,
-                "session_id": doc.session_id
-            }
-            points.append(PointStruct(id=point_id, vector=embedding, payload=payload))
-            
-        doc.status = "indexing"
-        doc.processing_progress = 90
-        doc.processing_message = "Adding document to session..."
-        db.add(doc)
-        db.commit()
-            
-        upload_points(points)
-        
-        # 5. Generate summary
-        try:
-            from .llm_service import call_llm
-            summary_prompt = f"Summarize the following document concisely in 2-3 sentences:\n\n{text[:4000]}"
-            summary = call_llm(summary_prompt)
-            doc.summary = summary
-        except Exception as e:
-            print(f"Summary generation failed: {e}")
-            doc.summary = "Summary generation failed."
-        
-        doc.status = "ready"
-        doc.processing_progress = 100
-        doc.processing_message = "Document is ready. You can ask follow-up questions."
-        db.add(doc)
-        db.commit()
-        
-    except Exception as e:
-        print(f"Error processing document {document_id}: {e}")
-        try:
-            doc.status = "failed"
-            doc.processing_message = f"Error: {str(e)}"
+            chunks = text_splitter.split_text(text)
+
+            if not chunks:
+                doc.status = "failed"
+                doc.processing_message = "Failed to extract text."
+                db.add(doc)
+                db.commit()
+                return
+
+            doc.status = "embedding"
+            doc.processing_progress = 60
+            doc.processing_message = "Creating secure document index..."
             db.add(doc)
             db.commit()
-        except:
-            pass
+
+            # 3. Generate embeddings in batches
+            BATCH = 64
+            embeddings = []
+            for i in range(0, len(chunks), BATCH):
+                embeddings.extend(generate_embeddings(chunks[i:i + BATCH]))
+
+            # 4. Store in Qdrant and DB (bulk insert)
+            points = []
+            chunk_records = []
+            for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
+                point_id = str(uuid.uuid4())
+                chunk_records.append(DocumentChunk(
+                    bank_id=doc.bank_id,
+                    document_id=doc.id,
+                    chunk_index=i,
+                    chunk_text=chunk_text,
+                    qdrant_point_id=point_id
+                ))
+                points.append(PointStruct(
+                    id=point_id,
+                    vector=embedding,
+                    payload={
+                        "bank_id": doc.bank_id,
+                        "document_id": doc.id,
+                        "chunk_index": i,
+                        "text": chunk_text,
+                        "document_scope": doc.document_scope,
+                        "session_id": doc.session_id,
+                    }
+                ))
+
+            db.add_all(chunk_records)
+            db.commit()
+
+            doc.status = "indexing"
+            doc.processing_progress = 90
+            doc.processing_message = "Adding document to session..."
+            db.add(doc)
+            db.commit()
+
+            # Upload to Qdrant in batches
+            QDRANT_BATCH = 100
+            for i in range(0, len(points), QDRANT_BATCH):
+                upload_points(points[i:i + QDRANT_BATCH])
+
+            # 5. Generate summary
+            try:
+                from .llm_service import call_llm
+                summary_prompt = f"Summarize the following document concisely in 2-3 sentences:\n\n{text[:4000]}"
+                doc.summary = call_llm(summary_prompt)
+            except Exception:
+                doc.summary = "Summary generation failed."
+
+            doc.status = "ready"
+            doc.processing_progress = 100
+            doc.processing_message = "Document is ready. You can ask follow-up questions."
+            db.add(doc)
+            db.commit()
+
+        except Exception as e:
+            try:
+                doc = db.get(Document, document_id)
+                if doc:
+                    doc.status = "failed"
+                    doc.processing_message = f"Error: {str(e)}"
+                    db.add(doc)
+                    db.commit()
+            except Exception:
+                pass

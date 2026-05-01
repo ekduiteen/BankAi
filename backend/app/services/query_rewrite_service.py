@@ -36,9 +36,12 @@ def _recent_history_text(history: Iterable[ChatMessage], limit: int = 6) -> str:
 
 def looks_like_follow_up(question: str) -> bool:
     q = question.strip().lower()
-    if len(q.split()) <= 7:
+    has_hint = any(hint in q for hint in FOLLOW_UP_HINTS)
+    # Only trigger on short queries when they also contain a reference pronoun/hint,
+    # not for short self-contained questions like "What is KYC?"
+    if len(q.split()) <= 7 and has_hint:
         return True
-    return any(hint in q for hint in FOLLOW_UP_HINTS)
+    return has_hint
 
 
 def rewrite_query_for_retrieval(question: str, history: list[ChatMessage] | None) -> str:

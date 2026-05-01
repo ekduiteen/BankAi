@@ -2,9 +2,9 @@ import { NavLink, useNavigate } from 'react-router-dom';
 
 const NAV_ITEMS = [
   { icon: 'add_comment',    label: 'New Chat',        to: '/chat' },
+  { icon: 'auto_awesome',   label: 'AI Tasks',        to: '/tasks' },
   { icon: 'history',        label: 'Session History', to: '/sessions' },
   { icon: 'folder_managed', label: 'Document Library',to: '/documents' },
-  { icon: 'star',           label: 'Features',        to: '/features' },
   { icon: 'analytics',      label: 'Analytics',       to: '/analytics' },
 ];
 

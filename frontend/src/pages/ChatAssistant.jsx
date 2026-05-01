@@ -3,6 +3,66 @@ import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom
 import api from '../api/axios';
 import FilePreviewCard from '../components/chat/FilePreviewCard';
 
+const EXPORT_FORMATS = [
+  { fmt: 'pdf',  label: 'PDF',         icon: 'picture_as_pdf' },
+  { fmt: 'docx', label: 'Word',        icon: 'description' },
+  { fmt: 'xlsx', label: 'Excel',       icon: 'table_chart' },
+  { fmt: 'pptx', label: 'PowerPoint',  icon: 'slideshow' },
+  { fmt: 'txt',  label: 'Text',        icon: 'article' },
+];
+
+function ChatExportButton({ content }) {
+  const [open, setOpen]     = useState(false);
+  const [loading, setLoading] = useState(null);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  const handleExport = async (fmt) => {
+    setLoading(fmt); setOpen(false);
+    try {
+      const res = await api.post('/export', { content, fmt, title: 'BankAi Response' }, { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      const cd = res.headers['content-disposition'] || '';
+      const fn = cd.match(/filename="(.+?)"/);
+      a.download = fn ? fn[1] : `response.${fmt}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (_) {}
+    finally { setLoading(null); }
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen(v => !v)} disabled={!!loading}
+        className="flex items-center gap-1 text-slate-400 hover:text-slate-900 text-[12px] transition-colors disabled:opacity-40">
+        {loading
+          ? <span className="w-3 h-3 border border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+          : <span className="material-symbols-outlined text-[15px]">download</span>
+        }
+        Export
+      </button>
+      {open && (
+        <div className="absolute left-0 bottom-6 w-40 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50">
+          {EXPORT_FORMATS.map(({ fmt, label, icon }) => (
+            <button key={fmt} onClick={() => handleExport(fmt)}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors">
+              <span className="material-symbols-outlined text-[14px] text-slate-400">{icon}</span>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const FILE_ACCEPT = '.pdf,.docx,.txt,.xlsx,.xls,.pptx,.ppt,.jpg,.jpeg,.png';
 
 // ── Markdown renderer ─────────────────────────────────────────────────────────
@@ -285,10 +345,10 @@ export default function ChatAssistant() {
     setAbortCtrl(ctrl);
 
     try {
-      const token = localStorage.getItem('token');
       const resp = await fetch(`/api/chat/sessions/${sessionId}/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           message: content,
           language,
@@ -628,6 +688,7 @@ function MsgBubble({ msg, idx, isLast, isLoading, editingId, editText, setEditTe
                   className="flex items-center gap-1 text-slate-400 hover:text-slate-900 text-[12px] transition-colors disabled:opacity-40">
                   <span className="material-symbols-outlined text-[15px]">refresh</span> Regenerate
                 </button>
+                <ChatExportButton content={msg.content} />
               </div>
             )}
 

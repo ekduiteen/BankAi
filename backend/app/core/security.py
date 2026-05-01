@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from typing import Any, Union
+import hashlib
+import os
 from jose import jwt
-from passlib.context import CryptContext
 from .config import settings
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 def create_access_token(subject: Union[str, Any], expires_delta: timedelta = None) -> str:
     if expires_delta:
@@ -15,17 +15,13 @@ def create_access_token(subject: Union[str, Any], expires_delta: timedelta = Non
     encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     return encoded_jwt
 
-import hashlib
-import os
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    print(f"Verifying password: {plain_password}")
     salt = hashed_password[:32]
     key = hashed_password[32:]
     new_key = hashlib.pbkdf2_hmac('sha256', plain_password.encode('utf-8'), salt.encode('utf-8'), 100000)
-    result = new_key.hex() == key
-    print(f"Verification result: {result}")
-    return result
+    return new_key.hex() == key
+
 
 def get_password_hash(password: str) -> str:
     salt = os.urandom(16).hex()

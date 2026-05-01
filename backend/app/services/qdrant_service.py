@@ -38,6 +38,19 @@ def upload_points(points: list[PointStruct]):
         points=points
     )
 
+def delete_points_by_document(document_id: int, bank_id: int):
+    from qdrant_client.models import Filter, FieldCondition, MatchValue
+    qdrant_client.delete(
+        collection_name=COLLECTION_NAME,
+        points_selector=Filter(
+            must=[
+                FieldCondition(key="document_id", match=MatchValue(value=document_id)),
+                FieldCondition(key="bank_id", match=MatchValue(value=bank_id)),
+            ]
+        ),
+    )
+
+
 def search_points(
     query_vector: list[float],
     bank_id: int,
