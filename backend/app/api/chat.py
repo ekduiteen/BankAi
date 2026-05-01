@@ -378,30 +378,38 @@ def stream_chat_message(
         # -- Status: generating response --
         yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing source-based answer...'})}\n\n"
 
-        ollama_messages = [{"role": "system", "content": sys_identity}]
+        vllm_messages = [{"role": "system", "content": sys_identity}]
         for msg in history[-10:]:
-            ollama_messages.append({
+            vllm_messages.append({
                 "role": "assistant" if msg.role == "assistant" else "user",
                 "content": msg.content,
             })
-        if has_image:
-            ollama_messages[-1]["images"] = [chat_request.image]
 
         full_response = ""
-        url = f"{settings.LLM_API_BASE}/api/chat"
-        payload = {"model": settings.LLM_MODEL, "messages": ollama_messages, "stream": True}
+        url = f"{settings.LLM_A_API_BASE}/v1/chat/completions"
+        headers = {"Authorization": f"Bearer {settings.LLM_A_API_KEY}"}
+        payload = {
+            "model": settings.LLM_A_MODEL,
+            "messages": vllm_messages,
+            "stream": True,
+            "temperature": 0.7,
+            "top_p": 0.9,
+        }
 
         try:
-            with httpx.stream("POST", url, json=payload, timeout=300.0) as response:
+            with httpx.stream("POST", url, json=payload, headers=headers, timeout=300.0) as response:
                 for line in response.iter_lines():
-                    if line:
+                    if line.startswith("data: "):
                         try:
-                            data = json.loads(line)
-                            token = data.get("message", {}).get("content", "") or data.get("response", "")
-                            full_response += token
-                            yield f"data: {json.dumps({'token': token})}\n\n"
-                            if data.get("done", False):
-                                break
+                            data = json.loads(line[6:])
+                            if data.get("choices"):
+                                delta = data["choices"][0].get("delta", {})
+                                token = delta.get("content", "")
+                                if token:
+                                    full_response += token
+                                    yield f"data: {json.dumps({'token': token})}\n\n"
+                                if data["choices"][0].get("finish_reason"):
+                                    break
                         except json.JSONDecodeError:
                             continue
         except Exception as e:
