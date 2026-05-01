@@ -57,9 +57,9 @@ class Settings(BaseSettings):
 
     # Legacy single-LLM fields kept for backward compat (points to A by default)
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "vllm")
-    LLM_MODEL: str = os.getenv("LLM_MODEL", os.getenv("LLM_A_MODEL", "model-a"))
-    LLM_API_BASE: str = os.getenv("LLM_API_BASE", os.getenv("LLM_A_API_BASE", "http://localhost:8001"))
-    LLM_API_KEY: str = os.getenv("LLM_API_KEY", os.getenv("LLM_A_API_KEY", "no-key"))
+    LLM_MODEL: str = os.getenv("LLM_MODEL") or os.getenv("LLM_A_MODEL", "model-a")
+    LLM_API_BASE: str = os.getenv("LLM_API_BASE") or os.getenv("LLM_A_API_BASE", "http://localhost:8001")
+    LLM_API_KEY: str = os.getenv("LLM_API_KEY") or os.getenv("LLM_A_API_KEY", "no-key")
 
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
     EMBEDDING_DIMENSION: int = int(os.getenv("EMBEDDING_DIMENSION", "384"))
