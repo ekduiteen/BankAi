@@ -93,7 +93,7 @@ services:
     entrypoint: /bin/bash
     command:
       - -c
-      - "vllm serve /data/models/qwen2.5-awq --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.35 --max-model-len 8192 --max-num-seqs 32 --served-model-name qwen2.5-7b --enable-prefix-caching"
+      - "vllm serve /data/models/qwen2.5-awq --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.40 --max-model-len 4096 --max-num-seqs 16 --served-model-name qwen2.5-7b --enable-prefix-caching"
     volumes:
       - /data:/data
     ports:
