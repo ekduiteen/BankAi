@@ -50,14 +50,6 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-bankai}
       - QDRANT_HOST=qdrant
       - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-admin}
-      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-password}
-      - LLM_PROVIDER=ollama
-      - LLM_MODEL=gemma4
-      - LLM_API_BASE=${LLM_API_BASE}
-      - LLM_API_KEY=${LLM_API_KEY:-}
-      - SUPER_ADMIN_EMAIL=admin@bankai.io
-      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD}
     ports:
       - "8000:8000"
 
@@ -86,6 +78,65 @@ services:
     environment:
       - NGINX_HOST=_
       - NGINX_PORT=80
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: bankai-ollama
+    restart: always
+    ports:
+      - "11434:11434"
+
+  vllm-a:
+    image: vllm/vllm-openai:latest
+    container_name: bankai-vllm-a
+    restart: always
+    command: >
+      vllm serve
+      --model /llm-models/qwen2.5-7b-awq
+      --host 0.0.0.0
+      --port 8000
+      --gpu-memory-utilization 0.35
+      --max-model-len 8192
+      --max-num-seqs 32
+      --served-model-name qwen2.5-7b
+      --enable-prefix-caching
+    volumes:
+      - /home/ekduiteen/llm-models:/llm-models
+    ports:
+      - "8001:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  vllm-b:
+    image: vllm/vllm-openai:latest
+    container_name: bankai-vllm-b
+    restart: always
+    command: >
+      vllm serve
+      --model /llm-models/qwen3-32b-awq
+      --host 0.0.0.0
+      --port 8000
+      --gpu-memory-utilization 0.50
+      --max-model-len 6144
+      --max-num-seqs 16
+      --served-model-name qwen3-32b
+      --enable-prefix-caching
+    volumes:
+      - /home/ekduiteen/llm-models:/llm-models
+    ports:
+      - "8002:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
 volumes:
   postgres_data:
