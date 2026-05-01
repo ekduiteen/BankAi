@@ -15,8 +15,9 @@ def get_session():
         yield session
 
 def init_db():
-    alembic_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..")
-    alembic_cfg = Config(os.path.join(alembic_dir, "alembic.ini"))
+    # From /app/app/db/session.py, go up 2 levels to /app
+    alembic_root = os.path.join(os.path.dirname(__file__), "..", "..")
+    alembic_cfg = Config(os.path.join(alembic_root, "alembic.ini"))
     alembic_cfg.set_main_option("sqlalchemy.url", DATABASE_URL)
-    alembic_cfg.set_main_option("script_location", os.path.join(alembic_dir, "alembic"))
+    alembic_cfg.set_main_option("script_location", os.path.join(alembic_root, "alembic"))
     command.upgrade(alembic_cfg, "head")
