@@ -252,7 +252,7 @@ async def create_chat_message(
 
 @router.post("/sessions/{session_id}/stream")
 @limiter.limit("30/minute")
-def stream_chat_message(
+async def stream_chat_message(
     request: Request,
     *,
     db: Session = Depends(get_session),
@@ -266,12 +266,12 @@ def stream_chat_message(
     session = db.get(ChatSession, session_id)
     if not session or session.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     if detect_prompt_injection(chat_request.message, db, current_user.id, current_user.bank_id):
         raise HTTPException(status_code=400, detail="Query rejected due to security policy.")
-    
+
     safe_message = detect_and_mask_pii(chat_request.message)
-    
+
     # Save user message
     user_msg = ChatMessage(
         bank_id=current_user.bank_id,
@@ -283,7 +283,7 @@ def stream_chat_message(
     db.add(user_msg)
     db.commit()
     _maybe_update_session_title(session, safe_message, db)
-    
+
     from sqlalchemy import asc
     history = db.exec(
         select(ChatMessage).where(ChatMessage.session_id == session_id)
@@ -291,13 +291,10 @@ def stream_chat_message(
     ).all()
     retrieval_query = rewrite_query_for_retrieval(safe_message, history[:-1])
 
-    # Resolve active session document IDs for session-aware RAG
     active_doc_ids = _session_active_document_ids(session, chat_request.active_document_ids)
-
     has_image = bool(chat_request.image)
 
-    def event_stream():
-        # -- Status: searching documents --
+    async def event_stream():
         yield f"data: {json.dumps({'type': 'status', 'message': 'Searching your uploaded documents...'})}\n\n"
 
         sources_list = []
@@ -311,7 +308,6 @@ def stream_chat_message(
 
                 query_vector = generate_embeddings([retrieval_query])[0]
 
-                # Priority 1: session-scoped docs
                 session_results = []
                 if active_doc_ids:
                     session_results = search_points(
@@ -323,7 +319,6 @@ def stream_chat_message(
                         document_scope="session_upload",
                     )
 
-                # Priority 2: global knowledge top-up
                 global_limit = max(0, 5 - len(session_results))
                 global_results = []
                 if global_limit > 0:
@@ -373,9 +368,8 @@ def stream_chat_message(
                                 })
                                 seen_src.add(doc_id)
             except Exception as e:
-                print(f"RAG failed in stream, falling back: {e}")
+                print(f"RAG failed in stream: {e}")
 
-        # -- Status: generating response --
         yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing source-based answer...'})}\n\n"
 
         vllm_messages = [{"role": "system", "content": sys_identity}]
@@ -396,43 +390,56 @@ def stream_chat_message(
             "top_p": 0.9,
         }
 
+        print(f"[STREAM] Calling vLLM at {url} model={settings.LLM_A_MODEL}")
         try:
-            with httpx.stream("POST", url, json=payload, headers=headers, timeout=300.0) as response:
-                for line in response.iter_lines():
-                    if line.startswith("data: "):
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                async with client.stream("POST", url, json=payload, headers=headers) as response:
+                    print(f"[STREAM] vLLM status: {response.status_code}")
+                    if response.status_code != 200:
+                        body = await response.aread()
+                        print(f"[STREAM] vLLM error body: {body[:500]}")
+                        yield f"data: {json.dumps({'token': f'AI engine returned error {response.status_code}.', 'done': True})}\n\n"
+                        return
+                    async for line in response.aiter_lines():
+                        if not line.startswith("data: "):
+                            continue
+                        chunk = line[6:]
+                        if chunk == "[DONE]":
+                            break
                         try:
-                            data = json.loads(line[6:])
+                            data = json.loads(chunk)
                             if data.get("choices"):
                                 delta = data["choices"][0].get("delta", {})
                                 token = delta.get("content", "")
                                 if token:
                                     full_response += token
                                     yield f"data: {json.dumps({'token': token})}\n\n"
-                                if data["choices"][0].get("finish_reason"):
-                                    break
                         except json.JSONDecodeError:
                             continue
         except Exception as e:
-            print(f"Streaming error: {e}")
+            print(f"[STREAM] Streaming error: {e}")
             yield f"data: {json.dumps({'token': 'Error connecting to AI engine.', 'done': True})}\n\n"
+            return
+
+        print(f"[STREAM] Done. tokens={len(full_response)}")
 
         # Generate follow-up suggestions
         suggestions = []
-        try:
-            from ..services.llm_service import call_llm
-            import re
-            sugg_prompt = (
-                f"Based on this answer, generate exactly 3 short follow-up questions the user might ask next. "
-                f"Return ONLY a JSON array of strings.\n\nAnswer: {full_response[:2000]}"
-            )
-            sugg_raw = call_llm(sugg_prompt)
-            m = re.search(r'\[.*\]', sugg_raw, re.DOTALL)
-            if m:
-                suggestions = json.loads(m.group(0))
-        except Exception as e:
-            print(f"Failed to generate suggestions: {e}")
+        if full_response:
+            try:
+                from ..services.llm_service import call_llm
+                import re
+                sugg_prompt = (
+                    f"Based on this answer, generate exactly 3 short follow-up questions the user might ask next. "
+                    f"Return ONLY a JSON array of strings.\n\nAnswer: {full_response[:2000]}"
+                )
+                sugg_raw = call_llm(sugg_prompt)
+                m = re.search(r'\[.*\]', sugg_raw, re.DOTALL)
+                if m:
+                    suggestions = json.loads(m.group(0))
+            except Exception as e:
+                print(f"[STREAM] Suggestions error: {e}")
 
-        # Persist assistant message
         try:
             ai_msg = ChatMessage(
                 bank_id=current_user.bank_id,
@@ -464,7 +471,7 @@ def stream_chat_message(
                 },
             )
         except Exception as e:
-            print(f"Error saving streamed message: {e}")
+            print(f"[STREAM] Error saving message: {e}")
 
         yield f"data: {json.dumps({'done': True, 'sources': sources_list, 'suggestions': suggestions})}\n\n"
 
@@ -606,65 +613,80 @@ async def stream_chat_with_file(
     history = db.query(ChatMessage).filter(ChatMessage.session_id == session_id).order_by(asc(ChatMessage.created_at)).all()
     
     sys_identity = get_system_identity(language)
-    ollama_messages = [{"role": "system", "content": sys_identity}]
+    vllm_messages = [{"role": "system", "content": sys_identity}]
     for msg in history[-10:]:
-        ollama_messages.append({
+        vllm_messages.append({
             "role": "assistant" if msg.role == "assistant" else "user",
             "content": msg.content
         })
-    
+
     is_image = file_ext in ['jpg', 'jpeg', 'png']
-    
+
     if is_image:
         with open(file_path, 'rb') as f:
             image_b64 = base64.b64encode(f.read()).decode('utf-8')
-        ollama_messages[-1]["images"] = [image_b64]
+        vllm_messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": f"I uploaded \"{file.filename}\". {message}"},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}},
+            ]
+        })
     else:
         from ..services.ingestion_service import extract_text
         extracted = extract_text(file_path, file_ext)
-        
         if not extracted.strip():
             extracted = "(No text could be extracted from this file)"
-        
-        # Truncate if too long (keep first 8000 chars for context window)
         if len(extracted) > 8000:
             extracted = extracted[:8000] + "\n\n... (truncated)"
-        
-        ollama_messages[-1]["content"] = f"I have uploaded a file called \"{file.filename}\". Here is the extracted content:\n\n--- FILE CONTENT ---\n{extracted}\n--- END FILE CONTENT ---\n\nMy request: {message}"
-    
+        vllm_messages.append({
+            "role": "user",
+            "content": f"I have uploaded \"{file.filename}\".\n\n--- FILE CONTENT ---\n{extracted}\n--- END FILE CONTENT ---\n\nMy request: {message}"
+        })
+
     from ..services.ingestion_service import process_document
     background_tasks.add_task(process_document, doc.id)
 
-    def event_stream():
+    async def event_stream():
         full_response = ""
-        url = f"{settings.LLM_API_BASE}/api/chat"
+        url = f"{settings.LLM_A_API_BASE}/v1/chat/completions"
+        headers = {"Authorization": f"Bearer {settings.LLM_A_API_KEY}"}
         payload = {
-            "model": settings.LLM_MODEL,
-            "messages": ollama_messages,
-            "stream": True
+            "model": settings.LLM_A_MODEL,
+            "messages": vllm_messages,
+            "stream": True,
+            "temperature": 0.7,
         }
 
         yield f"data: {json.dumps({'type': 'status', 'message': 'Analyzing uploaded file...'})}\n\n"
-        
+
         try:
-            with httpx.stream("POST", url, json=payload, timeout=300.0) as response:
-                for line in response.iter_lines():
-                    if line:
-                        try:
-                            data = json.loads(line)
-                            token = data.get("message", {}).get("content", "")
-                            if "response" in data:
-                                token = data.get("response", "")
-                            full_response += token
-                            yield f"data: {json.dumps({'token': token})}\n\n"
-                            if data.get("done", False):
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                async with client.stream("POST", url, json=payload, headers=headers) as response:
+                    if response.status_code != 200:
+                        body = await response.aread()
+                        print(f"[STREAM-FILE] vLLM error {response.status_code}: {body[:300]}")
+                        yield f"data: {json.dumps({'token': 'Error connecting to AI engine.'})}\n\n"
+                    else:
+                        async for line in response.aiter_lines():
+                            if not line.startswith("data: "):
+                                continue
+                            chunk = line[6:]
+                            if chunk == "[DONE]":
                                 break
-                        except json.JSONDecodeError:
-                            continue
+                            try:
+                                data = json.loads(chunk)
+                                if data.get("choices"):
+                                    token = data["choices"][0].get("delta", {}).get("content", "")
+                                    if token:
+                                        full_response += token
+                                        yield f"data: {json.dumps({'token': token})}\n\n"
+                            except json.JSONDecodeError:
+                                continue
         except Exception as e:
-            print(f"Streaming error: {e}")
+            print(f"[STREAM-FILE] Error: {e}")
             yield f"data: {json.dumps({'token': 'Error connecting to AI engine.'})}\n\n"
-        
+
         try:
             ai_msg = ChatMessage(
                 bank_id=current_user.bank_id,
@@ -683,8 +705,8 @@ async def stream_chat_with_file(
             db.commit()
             _update_session_summary(session, message, full_response, db)
         except Exception as e:
-            print(f"Error saving streamed message: {e}")
-        
+            print(f"[STREAM-FILE] Error saving message: {e}")
+
         yield f"data: {json.dumps({'done': True, 'id': doc.id, 'document_id': doc.id})}\n\n"
-    
+
     return StreamingResponse(event_stream(), media_type="text/event-stream")
