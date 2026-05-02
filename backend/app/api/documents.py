@@ -30,13 +30,13 @@ def ensure_upload_dir() -> None:
 @router.post("/upload", response_model=DocumentResponse)
 async def upload_document(
     background_tasks: BackgroundTasks,
-    title: str = Form(...),
-    document_type: str = Form(...),
+    file: UploadFile = File(...),
+    title: str = Form(None),
+    document_type: str = Form(None),
     department: Optional[str] = Form(None),
     access_level: int = Form(0),
-    file: UploadFile = File(...),
     db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_bank_admin),
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     if current_user.bank_id is None:
         from ..models.bank import Bank
@@ -60,11 +60,11 @@ async def upload_document(
     doc = Document(
         bank_id=current_user.bank_id,
         uploaded_by=current_user.id,
-        title=title,
+        title=title or file.filename,
         file_name=file.filename,
         file_type=ext.lstrip("."),
         file_path=file_path,
-        document_type=document_type,
+        document_type=document_type or "other",
         department=department,
         access_level=access_level,
         status="uploaded"

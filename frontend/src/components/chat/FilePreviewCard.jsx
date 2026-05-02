@@ -64,9 +64,16 @@ export default function FilePreviewCard({ file, onRemove }) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-on-surface truncate" data-testid="document-label">{fileName}</p>
         {isDone ? (
-          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-on-tertiary-container font-bold">
-            <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-            Ready for questions
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <div className="flex items-center gap-1 text-[11px] text-on-tertiary-container font-bold">
+              <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+              Ready for questions
+            </div>
+            {file.document_type && file.document_type !== 'other' && (
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-primary-container/20 text-primary-container rounded">
+                {file.document_type} {file.department ? `· ${file.department}` : ''}
+              </span>
+            )}
           </div>
         ) : isFailed ? (
           <div className="flex items-center gap-1 mt-0.5 text-[11px] text-error font-bold">

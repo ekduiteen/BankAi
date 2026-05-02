@@ -56,6 +56,54 @@ def extract_text(file_path: str, file_type: str) -> str:
     return text
 
 
+def auto_catalog(text: str, filename: str) -> dict:
+    """
+    Use LLM to automatically classify document type, department, and suggest title.
+    Returns dict with keys: document_type, department, title.
+    Falls back gracefully if LLM can't parse response.
+    """
+    import json
+    from .llm_service import call_llm
+
+    try:
+        prompt = f"""Analyze this document excerpt and classify it. Respond ONLY as valid JSON with no other text.
+
+Extract and return:
+1. "document_type": exactly one of [policy, procedure, manual, compliance, report, circular, directive, other]
+2. "department": one of [Credit, Treasury, Operations, HR, Compliance, Audit, IT, Risk, General]
+3. "title": a concise document title (max 10 words)
+
+Document filename: {filename}
+
+First 3000 characters of content:
+{text[:3000]}
+
+Respond ONLY as JSON, no markdown, no explanation."""
+
+        response = call_llm(prompt).strip()
+
+        # Try to extract JSON from response (handles models that may add markdown formatting)
+        if "```json" in response:
+            response = response.split("```json")[1].split("```")[0].strip()
+        elif "```" in response:
+            response = response.split("```")[1].split("```")[0].strip()
+
+        data = json.loads(response)
+
+        return {
+            "document_type": data.get("document_type", "other"),
+            "department": data.get("department", "General"),
+            "title": data.get("title", filename)
+        }
+    except Exception as e:
+        # Gracefully fall back to defaults if LLM fails
+        return {
+            "document_type": "other",
+            "department": "General",
+            "title": filename
+        }
+
+
 def process_document(document_id: int):
     """Background task — creates its own DB session so it is safe to run after the request ends."""
     from ..db.session import engine
@@ -74,6 +122,24 @@ def process_document(document_id: int):
 
             # 1. Extract text
             text = extract_text(doc.file_path, doc.file_type)
+
+            # Auto-catalog the document
+            doc.status = "cataloging"
+            doc.processing_progress = 25
+            doc.processing_message = "Classifying document..."
+            db.add(doc)
+            db.commit()
+
+            catalog = auto_catalog(text, doc.file_name)
+            # Only update if current type is "other" or fields are empty
+            if doc.document_type == "other":
+                doc.document_type = catalog["document_type"]
+            if not doc.department:
+                doc.department = catalog["department"]
+            if doc.title == doc.file_name:  # title was auto-filled with filename
+                doc.title = catalog["title"]
+            db.add(doc)
+            db.commit()
 
             doc.status = "chunking"
             doc.processing_progress = 40

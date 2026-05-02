@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import useDropZone from '../hooks/useDropZone';
 
 const STATUS_CLASS = {
   approved:  'badge-approved',
@@ -41,9 +42,31 @@ export default function Documents() {
   const [miniChatInput, setMiniChatInput]   = useState('');
   const [miniChatMsgs, setMiniChatMsgs]     = useState([]);
   const [miniChatLoading, setMiniChatLoading] = useState(false);
+  const [uploadQueue, setUploadQueue]       = useState([]);
   const fileRef = useRef(null);
+  const mainRef = useRef(null);
   const user    = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdmin = ['super_admin', 'bank_admin'].includes(user.role);
+
+  const handleDropFiles = useCallback(async (files) => {
+    if (!isAdmin && !['compliance_user', 'document_reviewer'].includes(user.role)) return;
+    const fileArray = Array.from(files);
+    for (const file of fileArray) {
+      const tmpId = `tmp-${Date.now()}-${Math.random()}`;
+      setUploadQueue(prev => [...prev, { id: tmpId, name: file.name, status: 'uploading', progress: 0, message: 'Uploading...' }]);
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const r = await api.post('/documents/upload', fd);
+        setUploadQueue(prev => prev.map(u => u.id === tmpId ? { ...r.data, status: 'uploading', message: 'Processing document...' } : u));
+        fetchDocs();
+      } catch (err) {
+        setUploadQueue(prev => prev.map(u => u.id === tmpId ? { ...u, status: 'failed', message: 'Upload failed' } : u));
+      }
+    }
+  }, [isAdmin, user.role]);
+
+  const { isDragging, dropHandlers } = useDropZone(handleDropFiles);
 
   const fetchDocs = async () => {
     try {
@@ -56,6 +79,30 @@ export default function Documents() {
   };
 
   useEffect(() => { fetchDocs(); }, []);
+
+  // Poll uploading documents
+  useEffect(() => {
+    const uploadingIds = uploadQueue.filter(u => !String(u.id).startsWith('tmp') && !['ready', 'approved', 'failed'].includes(u.status)).map(u => u.id);
+    if (uploadingIds.length === 0) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const r = await api.get(`/documents?limit=200`);
+        const docs = r.data.filter(d => uploadingIds.includes(d.id));
+        if (docs.length > 0) {
+          setUploadQueue(prev =>
+            prev.map(item =>
+              uploadingIds.includes(item.id)
+                ? { ...item, ...docs.find(d => d.id === item.id) }
+                : item
+            )
+          );
+        }
+      } catch (_) {}
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [uploadQueue]);
 
   const filtered = docs.filter(d =>
     (d.file_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -145,7 +192,17 @@ export default function Documents() {
   const typeInfo = (ext) => TYPE_ICON[ext?.toLowerCase()] || { icon: 'insert_drive_file', bg: 'bg-slate-100 text-slate-500' };
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-full overflow-hidden" ref={mainRef} {...dropHandlers}>
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="fixed inset-0 bg-primary/10 border-2 border-dashed border-primary flex items-center justify-center z-40 pointer-events-none">
+          <div className="flex flex-col items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-6xl">cloud_upload</span>
+            <p className="text-primary font-semibold text-lg">Drop files to upload</p>
+          </div>
+        </div>
+      )}
+
       {/* Main library panel */}
       <section className="flex-1 flex flex-col p-8 overflow-y-auto border-r border-slate-200 bg-background">
         {/* Header */}
@@ -379,6 +436,51 @@ export default function Documents() {
       </section>
 
       {/* Right preview + mini chat */}
+      {/* Upload queue strip */}
+      {uploadQueue.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-30">
+          <div className="max-h-48 overflow-y-auto p-4 space-y-2">
+            <p className="text-xs font-bold text-slate-500 uppercase">Uploading {uploadQueue.filter(u => u.status !== 'failed').length} file{uploadQueue.filter(u => u.status !== 'failed').length !== 1 ? 's' : ''}</p>
+            <div className="space-y-2">
+              {uploadQueue.map(item => (
+                <div key={item.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded border border-slate-200">
+                  <div className="w-8 h-8 rounded bg-slate-200 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-[14px] text-slate-600">insert_drive_file</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-900 truncate">{item.name}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      {item.status === 'failed' ? (
+                        <span className="text-[10px] text-error font-bold">Upload failed</span>
+                      ) : (
+                        <>
+                          <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-secondary transition-all duration-300" style={{ width: `${item.progress || 0}%` }} />
+                          </div>
+                          <span className="text-[10px] text-slate-500 font-bold flex-shrink-0">{item.progress || 0}%</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {['ready', 'approved'].includes(item.status) && (
+                    <span className="text-[11px] font-bold text-green-600 flex-shrink-0 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[13px]">check_circle</span>
+                      {item.document_type || 'other'}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setUploadQueue(prev => prev.filter(u => ['ready', 'approved', 'failed'].includes(u.status) === false))}
+              className="text-xs text-slate-500 hover:text-slate-900 font-semibold mt-2"
+            >
+              Clear completed
+            </button>
+          </div>
+        </div>
+      )}
+
       {selected && (
         <section className="w-[420px] flex flex-col bg-slate-50 border-l border-slate-200 flex-shrink-0">
           {/* Preview header */}

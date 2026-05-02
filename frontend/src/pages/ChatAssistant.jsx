@@ -4,6 +4,7 @@ import api from '../api/axios';
 import FilePreviewCard from '../components/chat/FilePreviewCard';
 import ModelModeSelector, { MODEL_MODES } from '../components/lipicore/ModelModeSelector';
 import { suggestModelMode } from '../utils/modelRoutingPreview';
+import useDropZone from '../hooks/useDropZone';
 
 const EXPORT_FORMATS = [
   { fmt: 'pdf',  label: 'PDF',         icon: 'picture_as_pdf' },
@@ -309,6 +310,17 @@ export default function ChatAssistant() {
     if (fileRef.current) fileRef.current.value = '';
   };
 
+  // ── Handle drop zone files ───────────────────────────────────────────────
+  const handleDropZoneFiles = useCallback(async (files) => {
+    const fileArray = Array.from(files);
+    for (const file of fileArray) {
+      // Reuse the existing upload logic by creating a fake event
+      await handleFileSelect({ target: { files: [file] } });
+    }
+  }, [handleFileSelect]);
+
+  const { isDragging, dropHandlers } = useDropZone(handleDropZoneFiles);
+
   // ── Send / Stream ────────────────────────────────────────────────────────
   const handleSend = async (e, override) => {
     e?.preventDefault();
@@ -460,10 +472,23 @@ export default function ChatAssistant() {
         </div>
 
         {/* Messages */}
-        <div ref={bodyRef} onScroll={() => {
-          const el = bodyRef.current;
-          if (el) setUserScrolled(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
-        }} className="flex-1 overflow-y-auto px-gutter py-xl hide-scrollbar">
+        <div
+          ref={bodyRef}
+          {...dropHandlers}
+          onScroll={() => {
+            const el = bodyRef.current;
+            if (el) setUserScrolled(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
+          }}
+          className={`flex-1 overflow-y-auto px-gutter py-xl hide-scrollbar relative transition-colors ${isDragging ? 'bg-primary/5' : ''}`}
+        >
+          {isDragging && (
+            <div className="absolute inset-0 flex items-center justify-center bg-primary/10 backdrop-blur-sm pointer-events-none z-40 rounded-lg border-2 border-dashed border-primary">
+              <div className="flex flex-col items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-5xl">attach_file</span>
+                <p className="text-primary font-semibold">Drop document to attach</p>
+              </div>
+            </div>
+          )}
           <div className="max-w-3xl mx-auto space-y-8">
             {messages.map((msg, idx) => (
               <MsgBubble key={msg.id} msg={msg} idx={idx}
