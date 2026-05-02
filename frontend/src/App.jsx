@@ -14,6 +14,7 @@ import Analytics from './pages/Analytics';
 import HelpCenter from './pages/HelpCenter';
 import AdminSecurity from './pages/AdminSecurity';
 import ComplianceRisk from './pages/ComplianceRisk';
+import LipiCoreProcessNavigator from './pages/LipiCoreProcessNavigator';
 import MainLayout from './layouts/MainLayout';
 
 // Auth is now httpOnly cookie — we use the cached user profile in localStorage
@@ -47,8 +48,14 @@ function App() {
           <Route path="audit-logs"     element={<AuditLogs />} />
           <Route path="settings"       element={<Settings />} />
           <Route path="help"           element={<HelpCenter />} />
-          <Route path="admin/security" element={<AdminSecurity />} />
-          <Route path="compliance"     element={<ComplianceRisk />} />
+          <Route path="admin/security"    element={<AdminSecurity />} />
+          <Route path="admin/users"       element={<Users />} />
+          <Route path="admin/settings"    element={<Settings />} />
+          <Route path="compliance"        element={<ComplianceRisk />} />
+          <Route path="regulatory"        element={<ComplianceRisk />} />
+          <Route path="reports"           element={<Analytics />} />
+          <Route path="audit"             element={<AuditLogs />} />
+          <Route path="process-navigator" element={<LipiCoreProcessNavigator />} />
         </Route>
       </Routes>
     </Router>

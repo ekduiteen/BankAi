@@ -8,7 +8,10 @@ export default function Landing() {
       {/* TopAppBar */}
       <header className="fixed top-0 w-full z-50 border-b bg-white/90 backdrop-blur-md border-slate-200 font-public-sans">
         <div className="flex justify-between items-center h-16 px-8 max-w-7xl mx-auto w-full">
-          <div className="text-xl font-bold tracking-tight text-slate-900">BankAi Enterprise</div>
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold tracking-tight text-slate-900">LipiCore</span>
+            <span className="text-xs font-semibold text-slate-400 border border-slate-200 px-2 py-0.5 rounded">Enterprise Server</span>
+          </div>
           <nav className="hidden md:flex gap-8">
             <a className="text-slate-900 font-semibold border-b-2 border-slate-900 pb-1" href="#solutions">Solutions</a>
             <a className="text-slate-600 font-medium hover:text-slate-900 transition-colors" href="#infrastructure">Infrastructure</a>
@@ -37,7 +40,7 @@ export default function Landing() {
                 Your Bank's Own Secure AI Document Intelligence Server
               </h1>
               <p className="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-lg">
-                A fully-integrated bare-metal appliance that brings sovereign LLM capabilities to your private network. No cloud, no leaks, absolute control.
+                Upload banking documents, ask follow-up questions, and get source-backed answers inside a dedicated private AI environment.
               </p>
               <div className="flex flex-wrap gap-4">
                 <button className="bg-secondary text-on-secondary px-8 py-4 rounded font-semibold text-body-md transition-all hover:shadow-lg">
@@ -66,16 +69,16 @@ export default function Landing() {
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex items-center gap-4">
               <span className="material-symbols-outlined text-tertiary-fixed-dim text-4xl">shield_lock</span>
-              <h3 className="text-on-primary text-xl font-semibold">Built for banks that want AI without exposing data.</h3>
+              <h3 className="text-on-primary text-xl font-semibold">No public AI. No shared SaaS. No live banking integration.</h3>
             </div>
             <p className="text-on-primary-container max-w-md text-sm">
-              Isolated architecture with zero connection to core banking systems or public internet, ensuring total data sovereignty and regulatory compliance.
+              LipiCore runs entirely on your premises. All documents, queries, and AI responses stay within your institution's network — never transmitted to any external service.
             </p>
           </div>
         </section>
 
         {/* Core Value Cards - Bento Grid */}
-        <section className="py-16 px-6 bg-surface">
+        <section id="solutions" className="py-16 px-6 bg-surface">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <span className="font-label-caps text-label-caps text-secondary">ARCHITECTURAL PILLARS</span>
@@ -90,7 +93,7 @@ export default function Landing() {
               <div className="bg-white p-8 rounded border border-slate-200 border-l-4 border-l-tertiary-fixed-dim shadow-sm">
                 <span className="material-symbols-outlined text-tertiary-fixed-dim mb-4 text-2xl">terminal</span>
                 <h4 className="font-h2 text-lg mb-3">Private LLM Runtime</h4>
-                <p className="text-on-surface-variant text-body-sm">Host Gemma and other open-source models locally with hardware-accelerated inference.</p>
+                <p className="text-on-surface-variant text-body-sm">LipiLLM — the bank's own fine-tuned model — runs locally with hardware-accelerated inference on your private server.</p>
               </div>
               <div className="bg-white p-8 rounded border border-slate-200 border-l-4 border-l-secondary shadow-sm">
                 <span className="material-symbols-outlined text-secondary mb-4 text-2xl">psychology</span>
@@ -129,7 +132,7 @@ export default function Landing() {
                   <p className="text-xs text-on-surface-variant">
                     {[
                       'Batch ingest secure PDFs & scans',
-                      'OCR & Layout analysis',
+                      'Parse, chunk & embed',
                       'Conversational queries',
                       'Instant context finding',
                       'Summaries & extractions',
@@ -142,8 +145,86 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Process Navigator Feature */}
+        <section id="solutions" className="py-16 px-6 bg-surface">
+          <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <span className="font-label-caps text-label-caps text-secondary mb-4 block">PROCESS NAVIGATOR</span>
+              <h2 className="font-h2 text-h2 mb-6">Turn SOPs into Guided Workflows</h2>
+              <p className="text-on-surface-variant mb-6">
+                LipiCore's Process Navigator converts your institution's Standard Operating Procedures into interactive, step-by-step workflow guides — complete with responsible departments, required documents, contacts, and escalation paths.
+              </p>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-tertiary-fixed-dim mt-0.5">account_tree</span>
+                  <div>
+                    <span className="text-body-md font-semibold">Loan Disbursement &amp; Appraisal</span>
+                    <p className="text-sm text-on-surface-variant">Multi-stage approval flows with department handoffs and document checklists.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-tertiary-fixed-dim mt-0.5">gavel</span>
+                  <div>
+                    <span className="text-body-md font-semibold">Regulatory &amp; Compliance Processes</span>
+                    <p className="text-sm text-on-surface-variant">NRB reporting, KYC/AML procedures, and internal audit trails structured for review.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-tertiary-fixed-dim mt-0.5">manage_accounts</span>
+                  <div>
+                    <span className="text-body-md font-semibold">Customer Onboarding &amp; Account Opening</span>
+                    <p className="text-sm text-on-surface-variant">End-to-end workflows from document collection to account activation.</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="material-symbols-outlined text-tertiary-fixed-dim mt-0.5">warning</span>
+                  <div>
+                    <span className="text-body-md font-semibold">Incident Response &amp; Escalation</span>
+                    <p className="text-sm text-on-surface-variant">Clear escalation paths with contact details and resolution timelines.</p>
+                  </div>
+                </li>
+              </ul>
+              <button
+                onClick={() => navigate('/login')}
+                className="bg-secondary text-on-secondary px-6 py-3 rounded font-semibold text-body-md transition-all hover:shadow-lg">
+                Explore Process Navigator
+              </button>
+            </div>
+            <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
+              <div className="bg-slate-900 px-6 py-3 flex items-center gap-3">
+                <span className="material-symbols-outlined text-slate-400 text-lg">account_tree</span>
+                <span className="text-slate-300 text-sm font-medium">LipiCore / Process Navigator</span>
+              </div>
+              <div className="p-6 space-y-3">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Retail Loan Disbursement — 7 Steps</p>
+                {[
+                  { step: '01', dept: 'Branch Operations', label: 'Application Receipt & Initial Check', done: true },
+                  { step: '02', dept: 'Credit Department', label: 'Credit Score & Eligibility Assessment', done: true },
+                  { step: '03', dept: 'Legal & Compliance', label: 'Document Verification & KYC', done: false },
+                  { step: '04', dept: 'Risk Management', label: 'Collateral Valuation', done: false },
+                  { step: '05', dept: 'Credit Committee', label: 'Final Approval', done: false },
+                ].map((item) => (
+                  <div key={item.step} className={`flex items-center gap-4 p-3 rounded-lg border ${item.done ? 'bg-green-50 border-green-100' : 'bg-white border-slate-100'}`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${item.done ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                      {item.done ? '✓' : item.step}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 truncate">{item.label}</p>
+                      <p className="text-[10px] text-slate-500">{item.dept}</p>
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-2 flex gap-2">
+                  <span className="px-2 py-1 bg-surface-container-high rounded text-[10px] font-semibold text-secondary">POLICY: LOAN-SOP-2024</span>
+                  <span className="px-2 py-1 bg-surface-container-high rounded text-[10px] font-semibold text-secondary">7 DOCS REQUIRED</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ChatGPT-Like Interaction */}
-        <section className="py-16 px-6">
+        <section className="py-16 px-6 bg-surface-container-low">
           <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
             <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden">
               <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
@@ -152,7 +233,7 @@ export default function Landing() {
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
-                <span className="text-slate-400 text-xs font-mono">bankai-secure-terminal</span>
+                <span className="text-slate-400 text-xs font-mono">lipicore-secure-terminal</span>
               </div>
               <div className="p-6 space-y-6 max-h-[500px] overflow-y-auto">
                 <div className="flex gap-4">
@@ -203,7 +284,7 @@ export default function Landing() {
             <div>
               <span className="font-label-caps text-label-caps text-secondary mb-4 block">CONVERSATIONAL INTELLIGENCE</span>
               <h2 className="font-h2 text-h2 mb-6">Ask Anything. Get Verified Answers.</h2>
-              <p className="text-on-surface-variant mb-6">Transform complex PDF tables and multi-page legal documents into instant conversational insights. BankAi understands financial context, not just keywords.</p>
+              <p className="text-on-surface-variant mb-6">Transform complex PDF tables and multi-page legal documents into instant conversational insights. LipiCore understands financial context, not just keywords.</p>
               <ul className="space-y-4">
                 <li className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-tertiary-fixed-dim">check_circle</span>
@@ -215,7 +296,7 @@ export default function Landing() {
                 </li>
                 <li className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-tertiary-fixed-dim">check_circle</span>
-                  <span className="text-body-md font-medium">Bilingual Support (English & Nepali)</span>
+                  <span className="text-body-md font-medium">Bilingual Support (English &amp; Nepali)</span>
                 </li>
               </ul>
             </div>
@@ -243,7 +324,7 @@ export default function Landing() {
         </section>
 
         {/* Security & Privacy */}
-        <section className="py-16 px-6 bg-surface-container-high">
+        <section id="security" className="py-16 px-6 bg-surface-container-high">
           <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12">
               <div className="bg-white p-12 rounded-xl border border-slate-200 shadow-sm">
@@ -251,7 +332,7 @@ export default function Landing() {
                 <div className="space-y-6">
                   {[
                     { icon: 'masks', title: 'PII Masking', desc: 'Automated identification and redaction of customer sensitive data before inference.' },
-                    { icon: 'manage_accounts', title: 'Role-Based Access (RBAC)', desc: 'Active Directory integration with strictly defined document access permissions.' },
+                    { icon: 'manage_accounts', title: 'Role-Based Access (RBAC)', desc: 'Six granular roles with document-level access permissions and audit-ready session logs.' },
                     { icon: 'rule', title: 'Audit Logs', desc: 'Immutable logs of every query, upload, and system modification for regulatory review.' }
                   ].map((item) => (
                     <div key={item.title} className="flex gap-4">
@@ -264,7 +345,7 @@ export default function Landing() {
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col justify-center">
+              <div id="governance" className="flex flex-col justify-center">
                 <h3 className="font-h2 text-h2 mb-6">Enterprise Governance</h3>
                 <p className="text-on-surface-variant mb-8">Maintain total control over your institutional knowledge. Manage libraries, set retention policies, and monitor system health from a single dashboard.</p>
                 <div className="grid grid-cols-2 gap-4">
@@ -281,10 +362,10 @@ export default function Landing() {
         </section>
 
         {/* Infrastructure Specs */}
-        <section className="py-16 px-6 bg-white">
+        <section id="infrastructure" className="py-16 px-6 bg-white">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="font-h2 text-h2">Hardware & Model Specs</h2>
+              <h2 className="font-h2 text-h2">Hardware &amp; Model Specs</h2>
               <p className="text-on-surface-variant">Enterprise-grade performance without compromise.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -292,7 +373,7 @@ export default function Landing() {
                 { label: 'COMPUTE', value: 'NVIDIA L40S', desc: 'Next-gen AI processing unit' },
                 { label: 'MEMORY', value: '128GB DDR5', desc: 'High-speed system RAM' },
                 { label: 'STORAGE', value: '4TB NVMe Gen5', desc: 'Enterprise-grade SSD arrays' },
-                { label: 'MODEL', value: 'Bank\'s Own Finetuned LLM', desc: 'Quantized local inference' }
+                { label: 'MODEL', value: 'LipiLLM', desc: "Bank's own fine-tuned language model" }
               ].map((spec) => (
                 <div key={spec.label} className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                   <p className="font-label-caps text-secondary mb-2">{spec.label}</p>
@@ -310,9 +391,9 @@ export default function Landing() {
             <h2 className="font-h2 text-h2 text-center mb-12">Institutional Setup</h2>
             <div className="space-y-12">
               {[
-                { num: '01', title: 'Physical Provisioning', desc: 'BankAi Server is delivered as a pre-configured rack-mount appliance to your data center.' },
-                { num: '02', title: 'Network Isolation', desc: 'Your IT team configures a secure air-gapped or restricted intranet segment for the server.' },
-                { num: '03', title: 'Library Mapping', desc: 'Ingest historical document repositories to build your institution\'s private AI knowledge base.' }
+                { num: '01', title: 'Physical Provisioning', desc: 'LipiCore Server is delivered as a pre-configured rack-mount appliance to your data center — ready to operate in an air-gapped environment.' },
+                { num: '02', title: 'Network Isolation', desc: 'Your IT team configures a secure air-gapped or restricted intranet segment for the server. No outbound internet access required.' },
+                { num: '03', title: 'Library Mapping', desc: 'Ingest historical document repositories to build your institution\'s private AI knowledge base. LipiLLM learns from your own documents.' }
               ].map((step) => (
                 <div key={step.num} className="flex gap-8 items-start">
                   <div className="w-16 h-16 shrink-0 flex items-center justify-center bg-secondary text-on-secondary rounded-full font-bold text-xl">
@@ -354,8 +435,11 @@ export default function Landing() {
       <footer className="w-full border-t mt-12 bg-slate-50 border-slate-200 text-sm font-public-sans">
         <div className="flex flex-col md:flex-row justify-between items-center py-12 px-8 max-w-7xl mx-auto gap-6">
           <div className="flex flex-col items-center md:items-start">
-            <span className="text-lg font-bold text-slate-900">BankAi Enterprise</span>
-            <p className="text-slate-500 mt-2">© 2026 BankAi Enterprise Server. Secure Document Intelligence for Financial Institutions.</p>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-lg font-bold text-slate-900">LipiCore</span>
+              <span className="text-xs font-semibold text-slate-400">by Lipi</span>
+            </div>
+            <p className="text-slate-500 mt-1">© 2026 Lipi. LipiCore Enterprise Server for financial institutions.</p>
           </div>
           <nav className="flex flex-wrap justify-center gap-8">
             <a className="text-slate-500 hover:text-slate-900 transition-colors" href="#">Privacy Policy</a>

@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom';
+import { useSearchParams, useOutletContext } from 'react-router-dom';
 import api from '../api/axios';
 import FilePreviewCard from '../components/chat/FilePreviewCard';
+import ModelModeSelector, { MODEL_MODES } from '../components/lipicore/ModelModeSelector';
+import { suggestModelMode } from '../utils/modelRoutingPreview';
 
 const EXPORT_FORMATS = [
   { fmt: 'pdf',  label: 'PDF',         icon: 'picture_as_pdf' },
@@ -25,7 +27,7 @@ function ChatExportButton({ content }) {
   const handleExport = async (fmt) => {
     setLoading(fmt); setOpen(false);
     try {
-      const res = await api.post('/export', { content, fmt, title: 'BankAi Response' }, { responseType: 'blob' });
+      const res = await api.post('/export', { content, fmt, title: 'LipiCore Response' }, { responseType: 'blob' });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement('a');
       a.href = url;
@@ -109,7 +111,7 @@ function safeJson(str, fallback) {
 function welcomeMsg() {
   return {
     id: 'welcome', role: 'assistant',
-    content: 'नमस्ते! I am **BankAi** — your secure financial document intelligence workspace.\n\nUpload a document using the attachment icon below, or ask me anything about your uploaded files.',
+    content: 'नमस्ते! I am **LipiCore** — your secure financial document intelligence workspace.\n\nUpload a document using the attachment icon below, or ask me anything about your uploaded documents.',
     sources: [], suggestions: [],
   };
 }
@@ -133,11 +135,20 @@ export default function ChatAssistant() {
   const [editText, setEditText]               = useState('');
   const [userScrolled, setUserScrolled]       = useState(false);
   const [abortCtrl, setAbortCtrl]             = useState(null);
+  const [modelMode, setModelMode]             = useState('auto');
+  const [routingHint, setRoutingHint]         = useState(null);
 
   const endRef      = useRef(null);
   const bodyRef     = useRef(null);
   const fileRef     = useRef(null);
   const textareaRef = useRef(null);
+
+  // Update routing hint whenever the user types and mode is 'auto'
+  useEffect(() => {
+    if (modelMode !== 'auto') { setRoutingHint(null); return; }
+    const { mode, reason } = suggestModelMode(input);
+    setRoutingHint(mode !== 'auto' && mode !== 'fast' ? reason : null);
+  }, [input, modelMode]);
 
   const scrollBottom = useCallback(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -208,7 +219,6 @@ export default function ChatAssistant() {
       return;
     }
 
-    console.log('Polling document status...');
     const pollInterval = setInterval(async () => {
       try {
         const ids = activeDocuments.map(d => d.id).join(',');
@@ -218,7 +228,6 @@ export default function ChatAssistant() {
           setActiveDocuments(prev =>
             prev.map(d => updated.find(u => u.id === d.id) || d)
           );
-          console.log('Document status updated:', updated.map(d => `${d.file_name}=${d.status}`));
 
           // Clear stale warnings if documents are now ready
           const allReady = updated.every(d => ['ready','approved','indexed'].includes(d.status));
@@ -257,19 +266,12 @@ export default function ChatAssistant() {
   // ── File upload ──────────────────────────────────────────────────────────
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
-    if (!file) {
-      console.warn('No file selected');
-      return;
-    }
-
-    console.log('File selected:', file.name, file.type, file.size, 'bytes');
+    if (!file) return;
 
     // Create session if needed
     if (!sessionId) {
       try {
-        console.log('Creating new session...');
         const r = await api.post('/chat/sessions', { title: 'New Analysis' });
-        console.log('Session created:', r.data.id);
         setSessionId(r.data.id);
       } catch (err) {
         console.error('Failed to create session:', err.response?.data || err.message);
@@ -290,19 +292,12 @@ export default function ChatAssistant() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      console.log('Uploading file to session', sessionId);
       const r = await api.post(`/chat/sessions/${sessionId}/files`, fd);
-      console.log('Upload successful:', r.data);
       setActiveDocuments(prev =>
         prev.map(d => d.id === tmpId ? { ...d, ...r.data, name: file.name, status: 'uploaded' } : d)
       );
     } catch (err) {
       const errorDetail = err.response?.data?.detail || err.message;
-      console.error('File upload failed:', {
-        status: err.response?.status,
-        detail: errorDetail,
-        fullError: err,
-      });
       setActiveDocuments(prev =>
         prev.map(d => d.id === tmpId
           ? {
@@ -345,6 +340,13 @@ export default function ChatAssistant() {
     setAbortCtrl(ctrl);
 
     try {
+      // Resolve which model to use
+      const resolvedMode = modelMode === 'auto'
+        ? suggestModelMode(content).mode
+        : modelMode;
+      const modeConfig = MODEL_MODES.find(m => m.id === resolvedMode);
+      const modelOverride = modeConfig?.model || null;
+
       const resp = await fetch(`/api/chat/sessions/${sessionId}/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -355,6 +357,7 @@ export default function ChatAssistant() {
           active_document_ids: activeDocuments
             .map(d => Number(d.document_id || d.id))
             .filter(id => Number.isInteger(id)),
+          ...(modelOverride ? { model_override: modelOverride } : {}),
         }),
         signal: ctrl.signal,
       });
@@ -434,22 +437,25 @@ export default function ChatAssistant() {
       <div className="flex-1 flex flex-col bg-white border-r border-slate-200 min-w-0">
 
         {/* Sub-header */}
-        <div className="h-14 flex items-center justify-between px-6 border-b border-slate-200 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-primary-container rounded flex items-center justify-center">
+        <div className="flex items-center justify-between px-6 py-2 border-b border-slate-200 flex-shrink-0 gap-4 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 bg-primary-container rounded flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-white text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
             </div>
             <span className="font-semibold text-on-surface text-sm truncate max-w-xs">
               {sessions.find(s => s.id === sessionId)?.title || 'New Analysis'}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={createNewSession} className="flex items-center gap-1 text-xs border border-slate-200 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors text-slate-600">
-              <span className="material-symbols-outlined text-[15px]">add_comment</span> New Chat
-            </button>
-            <button onClick={() => setSidebarOpen(v => !v)} className="p-1.5 text-slate-500 hover:text-on-surface hover:bg-slate-100 rounded">
-              <span className="material-symbols-outlined text-[20px]">history</span>
-            </button>
+          <div className="flex items-center gap-3">
+            <ModelModeSelector value={modelMode} onChange={setModelMode} compact />
+            <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
+              <button onClick={createNewSession} className="flex items-center gap-1 text-xs border border-slate-200 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors text-slate-600">
+                <span className="material-symbols-outlined text-[15px]">add_comment</span> New
+              </button>
+              <button onClick={() => setSidebarOpen(v => !v)} className="p-1.5 text-slate-500 hover:text-on-surface hover:bg-slate-100 rounded">
+                <span className="material-symbols-outlined text-[20px]">history</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -494,11 +500,9 @@ export default function ChatAssistant() {
 
             {isLoading && !streamingText && !statusMsg && (
               <div className="flex gap-4 items-center">
-                <div className="w-9 h-9 flex-shrink-0 bg-slate-100 rounded flex items-center justify-center">
-                  <span className="material-symbols-outlined text-slate-400 text-[18px]">smart_toy</span>
-                </div>
+                <AiBadge />
                 <div className="flex items-center gap-2">
-                  <span className="text-body-sm text-slate-500 italic">BankAi is analyzing your documents...</span>
+                  <span className="text-body-sm text-slate-500 italic">LipiCore is analyzing your documents…</span>
                   <ThinkingDots />
                 </div>
               </div>
@@ -525,7 +529,6 @@ export default function ChatAssistant() {
                   <FilePreviewCard key={d.id} file={d} onRemove={doc => setActiveDocuments(prev => prev.filter(x => x.id !== doc.id))} />
                 ))}
                 <button onClick={() => {
-                  console.log('Add reference document button clicked, fileRef:', fileRef.current);
                   fileRef.current?.click();
                 }}
                   className="p-3 bg-white border-2 border-dashed border-slate-200 rounded flex items-center justify-center gap-2 cursor-pointer hover:border-secondary transition-colors text-slate-400 hover:text-secondary text-body-sm font-medium">
@@ -535,9 +538,17 @@ export default function ChatAssistant() {
               </div>
             )}
 
+            {routingHint && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                <span className="material-symbols-outlined text-[14px]">tips_and_updates</span>
+                {routingHint}
+                <button onClick={() => { const { mode } = suggestModelMode(input); setModelMode(mode); setRoutingHint(null); }}
+                  className="ml-auto font-semibold underline hover:no-underline">Switch</button>
+              </div>
+            )}
+
             <div className="relative">
               <button type="button" onClick={() => {
-                console.log('Attachment button clicked, fileRef:', fileRef.current);
                 fileRef.current?.click();
               }}
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 transition-colors p-1"
@@ -557,7 +568,7 @@ export default function ChatAssistant() {
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
                 placeholder={activeDocuments.length > 0
                   ? `Ask about ${activeDocuments.map(d => d.name || d.file_name).slice(0, 2).join(', ')} in English or नेपाली...`
-                  : 'Ask BankAi about your documents in English or नेपाली...'}
+                  : 'Ask LipiCore about your documents in English or नेपाली…'}
                 className="w-full pl-12 pr-28 py-4 bg-slate-100 border-none focus:ring-2 focus:ring-secondary/20 rounded font-body-sm text-on-surface placeholder:text-slate-400 resize-none min-h-[56px] max-h-[160px] leading-relaxed outline-none"
                 rows={1}
                 disabled={isLoading && !abortCtrl}
