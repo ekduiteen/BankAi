@@ -423,22 +423,9 @@ async def stream_chat_message(
 
         print(f"[STREAM] Done. tokens={len(full_response)}")
 
-        # Generate follow-up suggestions
+        # Skip suggestions during streaming (would block the async generator)
+        # Could generate async in background if needed
         suggestions = []
-        if full_response:
-            try:
-                from ..services.llm_service import call_llm
-                import re
-                sugg_prompt = (
-                    f"Based on this answer, generate exactly 3 short follow-up questions the user might ask next. "
-                    f"Return ONLY a JSON array of strings.\n\nAnswer: {full_response[:2000]}"
-                )
-                sugg_raw = call_llm(sugg_prompt)
-                m = re.search(r'\[.*\]', sugg_raw, re.DOTALL)
-                if m:
-                    suggestions = json.loads(m.group(0))
-            except Exception as e:
-                print(f"[STREAM] Suggestions error: {e}")
 
         try:
             ai_msg = ChatMessage(
