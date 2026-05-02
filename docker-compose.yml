@@ -153,6 +153,26 @@ services:
               count: 1
               capabilities: [gpu]
 
+  vllm-d:
+    image: vllm/vllm-openai:latest
+    container_name: bankai-vllm-d
+    restart: 'no'
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - "vllm serve /data/models/llm/qwen3.6-27b --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.50 --max-model-len 8192 --max-num-seqs 8 --served-model-name qwen3.6-27b --enable-prefix-caching"
+    volumes:
+      - /data:/data
+    ports:
+      - "8004:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
 volumes:
   postgres_data:
   qdrant_data:
