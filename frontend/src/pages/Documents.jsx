@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import useDropZone from '../hooks/useDropZone';
@@ -9,6 +9,7 @@ export default function Documents() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploadQueue, setUploadQueue] = useState([]);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const fileInputRef = useRef(null);
   const mainRef = useRef(null);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -28,42 +29,57 @@ export default function Documents() {
     fetchDocs();
   }, [fetchDocs]);
 
-  // Handle file drops and selections
+  // Handle file drops and selections (parallel with concurrency limit)
   const handleFiles = useCallback(async (files) => {
     const fileArray = Array.from(files);
-    for (const file of fileArray) {
-      const tmpId = `tmp-${Date.now()}-${Math.random()}`;
-      setUploadQueue(prev => [...prev, {
+    const tmpIds = fileArray.map((f, i) => ({ file: f, tmpId: `tmp-${Date.now()}-${i}` }));
+
+    // Add all files to queue at once
+    setUploadQueue(prev => [
+      ...prev,
+      ...tmpIds.map(({ file, tmpId }) => ({
         id: tmpId,
         name: file.name,
         status: 'uploading',
         progress: 0,
-      }]);
+      }))
+    ]);
 
-      try {
-        const fd = new FormData();
-        fd.append('file', file);
-        const r = await api.post('/documents/upload', fd);
-        setUploadQueue(prev =>
-          prev.map(u => u.id === tmpId ? { ...r.data, status: 'uploaded', progress: 0 } : u)
-        );
-        fetchDocs();
-      } catch (err) {
-        setUploadQueue(prev =>
-          prev.map(u => u.id === tmpId ? { ...u, status: 'failed' } : u)
-        );
-      }
+    // Upload with concurrency limit of 3
+    const CONCURRENCY = 3;
+    for (let i = 0; i < tmpIds.length; i += CONCURRENCY) {
+      const batch = tmpIds.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        batch.map(async ({ file, tmpId }) => {
+          try {
+            const fd = new FormData();
+            fd.append('file', file);
+            const r = await api.post('/documents/upload', fd);
+            setUploadQueue(prev =>
+              prev.map(u => u.id === tmpId ? { ...r.data, status: 'uploaded', progress: 0 } : u)
+            );
+          } catch (err) {
+            setUploadQueue(prev =>
+              prev.map(u => u.id === tmpId ? { ...u, status: 'failed' } : u)
+            );
+          }
+        })
+      );
     }
-  }, [fetchDocs]);
+  }, []);
 
   const { isDragging, dropHandlers } = useDropZone(handleFiles);
 
-  // Poll document progress
-  useEffect(() => {
-    const uploadingIds = uploadQueue
+  // Stable uploadingIds for polling (prevents interval recreation)
+  const uploadingIds = useMemo(
+    () => uploadQueue
       .filter(u => !String(u.id).startsWith('tmp') && !['ready', 'approved', 'failed'].includes(u.status))
-      .map(u => u.id);
+      .map(u => u.id),
+    [uploadQueue]
+  );
 
+  // Poll document progress with stable dependency
+  useEffect(() => {
     if (uploadingIds.length === 0) return;
 
     const poll = setInterval(async () => {
@@ -83,7 +99,7 @@ export default function Documents() {
     }, 2000);
 
     return () => clearInterval(poll);
-  }, [uploadQueue]);
+  }, [uploadingIds]);
 
   // Approve document
   const handleApprove = async (docId) => {
@@ -102,8 +118,49 @@ export default function Documents() {
     } catch (_) {}
   };
 
+  // Bulk approve
+  const handleBulkApprove = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Approve ${selectedIds.size} document(s)?`)) return;
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => api.patch(`/documents/${id}/approve`)));
+      setSelectedIds(new Set());
+      fetchDocs();
+    } catch (_) {}
+  };
+
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} document(s)? Cannot be undone.`)) return;
+    try {
+      await Promise.all(Array.from(selectedIds).map(id => api.delete(`/documents/${id}`)));
+      setSelectedIds(new Set());
+      fetchDocs();
+    } catch (_) {}
+  };
+
+  // Toggle selection
+  const toggleSelect = (docId) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(docId)) next.delete(docId);
+      else next.add(docId);
+      return next;
+    });
+  };
+
+  // Select all visible
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(d => d.id)));
+    }
+  };
+
   const filtered = docs.filter(d =>
-    (d.file_name || '').toLowerCase().includes(search.toLowerCase())
+    (d.file_name || '').toLowerCase().includes(search.toLowerCase()) && !String(d.id).startsWith('tmp')
   );
 
   const getIcon = (ext) => {
@@ -183,14 +240,27 @@ export default function Documents() {
           </div>
 
           {/* Search */}
-          <div className="mt-6 relative max-w-xs">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search documents..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-            />
-            <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+          <div className="mt-6 flex items-center gap-3">
+            <div className="relative flex-1 max-w-xs">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search documents..."
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+              />
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-[18px]">search</span>
+            </div>
+            {filtered.length > 0 && (
+              <label className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === filtered.length && filtered.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 rounded border-slate-300 text-primary"
+                />
+                Select all
+              </label>
+            )}
           </div>
         </div>
 
@@ -210,11 +280,58 @@ export default function Documents() {
             </div>
           ) : (
             <div className="space-y-2">
+              {/* Bulk action bar */}
+              {selectedIds.size > 0 && (
+                <div className="sticky top-0 bg-primary/5 border-b border-primary/20 rounded-lg p-4 mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size === filtered.length && filtered.length > 0}
+                      onChange={toggleSelectAll}
+                      className="w-5 h-5 rounded border-slate-300 text-primary"
+                    />
+                    <span className="font-semibold text-primary">{selectedIds.size} selected</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {canApprove && (
+                      <button
+                        onClick={handleBulkApprove}
+                        className="px-3 py-1.5 bg-green-50 text-green-700 font-semibold text-xs rounded hover:bg-green-100 transition-colors flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        Approve All
+                      </button>
+                    )}
+                    <button
+                      onClick={handleBulkDelete}
+                      className="px-3 py-1.5 bg-red-50 text-red-700 font-semibold text-xs rounded hover:bg-red-100 transition-colors flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">delete</span>
+                      Delete All
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {filtered.map(doc => (
                 <div
                   key={doc.id}
-                  className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-lg hover:shadow-sm transition-shadow"
+                  className={`flex items-center gap-4 p-4 bg-white border rounded-lg transition-all ${
+                    selectedIds.has(doc.id)
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-slate-200 hover:shadow-sm'
+                  }`}
+                  onClick={() => toggleSelect(doc.id)}
                 >
+                  {/* Checkbox */}
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(doc.id)}
+                    onChange={() => toggleSelect(doc.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-5 h-5 rounded border-slate-300 text-primary flex-shrink-0"
+                  />
+
                   {/* File icon */}
                   <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center flex-shrink-0">
                     <span className="material-symbols-outlined text-slate-600">{getIcon(doc.file_type)}</span>
@@ -252,29 +369,31 @@ export default function Documents() {
                   )}
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {doc.status === 'ready' && canApprove && !doc.approved_by && (
+                  {selectedIds.size === 0 && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {doc.status === 'ready' && canApprove && !doc.approved_by && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleApprove(doc.id); }}
+                          className="px-3 py-1 bg-green-50 text-green-700 font-semibold text-xs rounded hover:bg-green-100 transition-colors flex items-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                          Approve
+                        </button>
+                      )}
+                      {doc.approved_by && (
+                        <span className="text-[10px] text-slate-500 font-semibold">
+                          ✓ Approved
+                        </span>
+                      )}
                       <button
-                        onClick={() => handleApprove(doc.id)}
-                        className="px-3 py-1 bg-green-50 text-green-700 font-semibold text-xs rounded hover:bg-green-100 transition-colors flex items-center gap-1"
+                        onClick={(e) => { e.stopPropagation(); handleDelete(doc.id); }}
+                        className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Delete"
                       >
-                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                        Approve
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
                       </button>
-                    )}
-                    {doc.approved_by && (
-                      <span className="text-[10px] text-slate-500 font-semibold">
-                        ✓ Approved
-                      </span>
-                    )}
-                    <button
-                      onClick={() => handleDelete(doc.id)}
-                      className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="Delete"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

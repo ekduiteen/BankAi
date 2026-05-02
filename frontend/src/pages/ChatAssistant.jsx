@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useSearchParams, useOutletContext, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import FilePreviewCard from '../components/chat/FilePreviewCard';
 import ModelModeSelector, { MODEL_MODES } from '../components/lipicore/ModelModeSelector';
@@ -120,6 +120,7 @@ function welcomeMsg() {
 // ── Main component ────────────────────────────────────────────────────────────
 export default function ChatAssistant() {
   const [searchParams]  = useSearchParams();
+  const navigate        = useNavigate();
   const outletCtx       = useOutletContext() || {};
   const language        = outletCtx.language || localStorage.getItem('language') || 'en';
 
@@ -167,6 +168,8 @@ export default function ChatAssistant() {
     try {
       setSessionId(id);
       setSidebarOpen(false);
+      setActiveDocuments([]);  // Clear stale documents immediately
+
       const [msgR, sessR] = await Promise.all([
         api.get(`/chat/sessions/${id}/messages`),
         api.get(`/chat/sessions/${id}`),
@@ -188,9 +191,7 @@ export default function ChatAssistant() {
             activeIds.includes(d.id) && d.session_id === id
           );
           setActiveDocuments(sessionDocs);
-        } catch (_) { setActiveDocuments([]); }
-      } else {
-        setActiveDocuments([]);
+        } catch (_) {}
       }
     } catch (err) { console.error('loadSession', err); }
   }, []);
@@ -201,9 +202,10 @@ export default function ChatAssistant() {
       setSessionId(r.data.id);
       setActiveDocuments([]);
       setMessages([welcomeMsg()]);
+      navigate(`?session=${r.data.id}`);
       fetchSessions();
     } catch (_) {}
-  }, [fetchSessions]);
+  }, [fetchSessions, navigate]);
 
   // ── Poll document status ────────────────────────────────────────────────
   useEffect(() => {
@@ -249,14 +251,15 @@ export default function ChatAssistant() {
   // ── Bootstrap ────────────────────────────────────────────────────────────
   useEffect(() => {
     const init = async () => {
-      await fetchSessions();
+      const r = await api.get('/chat/sessions').catch(() => ({ data: [] }));
+      setSessions(r.data);
+
       const sid = searchParams.get('session');
       const prompt = searchParams.get('prompt');
       if (sid) {
         await loadSession(parseInt(sid));
         if (prompt) setInput(decodeURIComponent(prompt));
       } else {
-        const r = await api.get('/chat/sessions').catch(() => ({ data: [] }));
         if (r.data.length > 0) await loadSession(r.data[0].id);
         else await createNewSession();
       }
