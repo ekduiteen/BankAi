@@ -15,9 +15,34 @@ def extract_text(file_path: str, file_type: str) -> str:
     text = ""
     ft = file_type.lower()
     if ft == 'pdf':
-        reader = PdfReader(file_path)
-        for page in reader.pages:
-            text += page.extract_text() + "\n"
+        try:
+            from pdf2image import convert_from_path
+            import base64
+            from .llm_service import call_vision_llm
+
+            reader = PdfReader(file_path)
+            for page in reader.pages:
+                page_text = page.extract_text()
+                text += page_text + "\n"
+
+            # If PDF has no extractable text (scanned/image-based), fall back to vision OCR
+            if not text.strip():
+                try:
+                    images = convert_from_path(file_path, first_page=1, last_page=min(3, len(reader.pages)))
+                    for img in images:
+                        import io
+                        img_bytes = io.BytesIO()
+                        img.save(img_bytes, format='PNG')
+                        img_b64 = base64.b64encode(img_bytes.getvalue()).decode('utf-8')
+                        desc = call_vision_llm(
+                            "Extract all text from this document image. Be thorough and preserve formatting.",
+                            img_b64
+                        )
+                        text += desc + "\n"
+                except Exception:
+                    pass  # Vision OCR also failed, will be caught by empty text check
+        except Exception:
+            pass  # PDF reading failed, will be caught by empty text check
     elif ft == 'docx':
         doc = DocxDocument(file_path)
         for para in doc.paragraphs:
