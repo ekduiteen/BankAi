@@ -51,8 +51,8 @@ services:
       - QDRANT_HOST=qdrant
       - MINIO_ENDPOINT=minio:9000
       # LLM routing — overrides .env so git is the source of truth
-      - LLM_A_API_BASE=http://bankai-vllm-a:8000
-      - LLM_A_MODEL=qwen2.5-7b
+      - LLM_A_API_BASE=http://bankai-vllm-b:8000
+      - LLM_A_MODEL=lipi-llm
       - LLM_A_API_KEY=no-key
       - LLM_B_API_BASE=http://bankai-vllm-b:8000
       - LLM_B_MODEL=lipi-llm
@@ -92,26 +92,6 @@ services:
     restart: always
     ports:
       - "11434:11434"
-
-  vllm-a:
-    image: vllm/vllm-openai:latest
-    container_name: bankai-vllm-a
-    restart: always
-    entrypoint: /bin/bash
-    command:
-      - -c
-      - "vllm serve /data/models/qwen2.5-awq --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.40 --max-model-len 4096 --max-num-seqs 16 --served-model-name qwen2.5-7b --enable-prefix-caching"
-    volumes:
-      - /data:/data
-    ports:
-      - "8001:8000"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
 
   vllm-b:
     image: vllm/vllm-openai:latest
