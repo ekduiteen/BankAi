@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 import uuid
 import logging
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
@@ -314,7 +315,8 @@ async def stream_chat_message(
                 from ..models.document import Document
 
                 logger.info(f"[STREAM] Generating embeddings for query: {retrieval_query[:50]}")
-                query_vector = generate_embeddings([retrieval_query])[0]
+                embeddings = await asyncio.to_thread(generate_embeddings, [retrieval_query])
+                query_vector = embeddings[0]
                 logger.info("[STREAM] Embeddings generated")
 
                 session_results = []
