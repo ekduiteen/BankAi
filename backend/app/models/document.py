@@ -26,10 +26,6 @@ class Document(SQLModel, table=True):
     processing_progress: int = Field(default=0)
     processing_message: Optional[str] = None
 
-    # Approval tracking (multi-approval workflow)
-    approved_by: Optional[int] = Field(default=None, foreign_key="user.id")  # Which admin approved it
-    approved_at: Optional[datetime] = None
-
     # Chat session uploads
     session_id: Optional[int] = Field(default=None, foreign_key="chatsession.id")
     document_scope: Optional[str] = Field(default="global_knowledge")  # session_upload, global_knowledge

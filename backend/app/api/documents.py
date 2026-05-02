@@ -179,8 +179,6 @@ def approve_document(
         raise HTTPException(status_code=403, detail="Not authorized to approve")
 
     doc.status = "approved"
-    doc.approved_by = current_user.id
-    doc.approved_at = datetime.utcnow()
     db.add(doc)
     db.commit()
     db.refresh(doc)
