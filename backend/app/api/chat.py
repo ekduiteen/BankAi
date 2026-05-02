@@ -263,6 +263,7 @@ async def stream_chat_message(
     """
     Stream a chat response using Server-Sent Events.
     """
+    print(f"[STREAM] Route handler called for session {session_id}")
     session = db.get(ChatSession, session_id)
     if not session or session.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -295,18 +296,23 @@ async def stream_chat_message(
     has_image = bool(chat_request.image)
 
     async def event_stream():
+        print("[STREAM] Starting event_stream")
         yield f"data: {json.dumps({'type': 'status', 'message': 'Searching your uploaded documents...'})}\n\n"
 
         sources_list = []
         sys_identity = get_system_identity(chat_request.language)
+        print("[STREAM] Got system identity")
 
         if not has_image:
             try:
+                print("[STREAM] Starting RAG search")
                 from ..services.embedding_service import generate_embeddings
                 from ..services.qdrant_service import search_points
                 from ..models.document import Document
 
+                print(f"[STREAM] Generating embeddings for query: {retrieval_query[:50]}")
                 query_vector = generate_embeddings([retrieval_query])[0]
+                print("[STREAM] Embeddings generated")
 
                 session_results = []
                 if active_doc_ids:
@@ -370,6 +376,7 @@ async def stream_chat_message(
             except Exception as e:
                 print(f"RAG failed in stream: {e}")
 
+        print("[STREAM] About to yield prepare status")
         yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing source-based answer...'})}\n\n"
 
         vllm_messages = [{"role": "system", "content": sys_identity}]
@@ -390,21 +397,26 @@ async def stream_chat_message(
             "top_p": 0.9,
         }
 
-        print(f"[STREAM] Calling vLLM at {url} model={settings.LLM_A_MODEL}")
+        print(f"[STREAM] About to call vLLM at {url} with model={settings.LLM_A_MODEL}")
         try:
+            print("[STREAM] Creating httpx client")
             async with httpx.AsyncClient(timeout=300.0) as client:
+                print("[STREAM] Streaming from vLLM...")
                 async with client.stream("POST", url, json=payload, headers=headers) as response:
-                    print(f"[STREAM] vLLM status: {response.status_code}")
+                    print(f"[STREAM] Got vLLM response: {response.status_code}")
                     if response.status_code != 200:
                         body = await response.aread()
                         print(f"[STREAM] vLLM error body: {body[:500]}")
                         yield f"data: {json.dumps({'token': f'AI engine returned error {response.status_code}.', 'done': True})}\n\n"
                         return
+                    print("[STREAM] Starting to read vLLM lines")
+                    token_count = 0
                     async for line in response.aiter_lines():
                         if not line.startswith("data: "):
                             continue
                         chunk = line[6:]
                         if chunk == "[DONE]":
+                            print("[STREAM] Got [DONE]")
                             break
                         try:
                             data = json.loads(chunk)
@@ -412,7 +424,9 @@ async def stream_chat_message(
                                 delta = data["choices"][0].get("delta", {})
                                 token = delta.get("content", "")
                                 if token:
+                                    token_count += 1
                                     full_response += token
+                                    print(f"[STREAM] Token {token_count}: {token[:20]}")
                                     yield f"data: {json.dumps({'token': token})}\n\n"
                         except json.JSONDecodeError:
                             continue
@@ -462,6 +476,7 @@ async def stream_chat_message(
 
         yield f"data: {json.dumps({'done': True, 'sources': sources_list, 'suggestions': suggestions})}\n\n"
 
+    print("[STREAM] About to return StreamingResponse with event_stream generator")
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 @router.post("/sessions/{session_id}/files")
