@@ -9,17 +9,20 @@ class Document(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     bank_id: int = Field(foreign_key="bank.id")
     uploaded_by: int = Field(foreign_key="user.id")
+    title: str = ""
     file_name: str
     file_type: str
     file_path: str
 
     # Auto-cataloging (filled by LLM in background)
-    document_type: Optional[str] = None  # policy, procedure, manual, compliance, report, circular, directive, other
+    document_type: str = "other"  # policy, procedure, manual, compliance, report, circular, directive, other
     department: Optional[str] = None     # Credit, Treasury, Operations, HR, Compliance, Audit, IT, Risk, General
+    access_level: int = 0
     summary: Optional[str] = None
 
     # Status and progress
     status: str = Field(default="uploaded")  # uploaded, processing, extracting_text, chunking, embedding, indexed, approved, disabled, failed
+    version: str = "1.0"
     processing_progress: int = Field(default=0)
     processing_message: Optional[str] = None
 
@@ -29,7 +32,7 @@ class Document(SQLModel, table=True):
 
     # Chat session uploads
     session_id: Optional[int] = Field(default=None, foreign_key="chatsession.id")
-    document_scope: str = Field(default="global_knowledge")  # session_upload, global_knowledge
+    document_scope: Optional[str] = Field(default="global_knowledge")  # session_upload, global_knowledge
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

@@ -58,9 +58,13 @@ async def upload_document(
     doc = Document(
         bank_id=current_user.bank_id,
         uploaded_by=current_user.id,
+        title=file.filename,
         file_name=file.filename,
         file_type=ext.lstrip("."),
         file_path=file_path,
+        document_type="other",
+        access_level=0,
+        version="1.0",
         status="uploaded"
     )
     db.add(doc)
