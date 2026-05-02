@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 import uuid
 import shutil
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlmodel import Session, select
 from sqlalchemy import or_, and_, delete as sa_delete
@@ -31,25 +32,22 @@ def ensure_upload_dir() -> None:
 async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    title: str = Form(None),
-    document_type: str = Form(None),
-    department: Optional[str] = Form(None),
-    access_level: int = Form(0),
     db: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> Any:
+    """Upload a document. Just file, no metadata needed."""
     if current_user.bank_id is None:
         from ..models.bank import Bank
         default_bank = db.exec(select(Bank).where(Bank.code == "DEFAULT")).first()
         if default_bank:
             current_user.bank_id = default_bank.id
         else:
-            raise HTTPException(status_code=500, detail="User has no bank assigned and no default bank exists")
+            raise HTTPException(status_code=500, detail="No bank assigned")
 
     ALLOWED = {'.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.pptx', '.ppt'}
     ext = Path(file.filename).suffix.lower()
     if ext not in ALLOWED:
-        raise HTTPException(status_code=400, detail="Supported files: PDF, DOCX, TXT, JPG, PNG, XLSX, PPTX")
+        raise HTTPException(status_code=400, detail="Supported: PDF, DOCX, TXT, JPG, PNG, XLSX, PPTX")
 
     ensure_upload_dir()
     safe_name = f"{current_user.bank_id}_{uuid.uuid4().hex}{ext}"
@@ -60,19 +58,15 @@ async def upload_document(
     doc = Document(
         bank_id=current_user.bank_id,
         uploaded_by=current_user.id,
-        title=title or file.filename,
         file_name=file.filename,
         file_type=ext.lstrip("."),
         file_path=file_path,
-        document_type=document_type or "other",
-        department=department,
-        access_level=access_level,
         status="uploaded"
     )
     db.add(doc)
     db.commit()
     db.refresh(doc)
-    
+
     log_audit_event(
         db=db,
         action="upload",
@@ -80,11 +74,10 @@ async def upload_document(
         resource_id=str(doc.id),
         bank_id=current_user.bank_id,
         user_id=current_user.id,
-        metadata={"file_name": doc.file_name, "title": doc.title}
+        metadata={"file_name": doc.file_name}
     )
-    
-    background_tasks.add_task(process_document, doc.id)
 
+    background_tasks.add_task(process_document, doc.id)
     return doc
 
 @router.get("", response_model=List[DocumentResponse])
@@ -170,20 +163,24 @@ def approve_document(
     *,
     db: Session = Depends(get_session),
     document_id: int,
-    current_user: User = Depends(get_current_bank_admin),
+    current_user: User = Depends(get_current_user),
 ) -> Any:
-    """
-    Approve a document to make it searchable.
-    """
+    """Approve a document (track who approved it)."""
     doc = db.get(Document, document_id)
     if not doc or doc.bank_id != current_user.bank_id:
         raise HTTPException(status_code=404, detail="Document not found")
-        
+
+    # Check if user has permission to approve (admin or compliance)
+    if current_user.role not in ['super_admin', 'bank_admin', 'compliance_user', 'document_reviewer']:
+        raise HTTPException(status_code=403, detail="Not authorized to approve")
+
     doc.status = "approved"
+    doc.approved_by = current_user.id
+    doc.approved_at = datetime.utcnow()
     db.add(doc)
     db.commit()
     db.refresh(doc)
-    
+
     log_audit_event(
         db=db,
         action="approve",
@@ -192,7 +189,7 @@ def approve_document(
         bank_id=current_user.bank_id,
         user_id=current_user.id
     )
-    
+
     return doc
 
 @router.delete("/{document_id}")
