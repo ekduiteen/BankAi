@@ -2,12 +2,15 @@ from typing import Any, List, Optional
 from pathlib import Path
 import os
 import uuid
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 import json
 import httpx
 from ..core.limiter import limiter
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {'.pdf', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.xlsx', '.xls', '.pptx', '.ppt'}
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
@@ -263,7 +266,7 @@ async def stream_chat_message(
     """
     Stream a chat response using Server-Sent Events.
     """
-    print(f"[STREAM] Route handler called for session {session_id}")
+    logger.info(f"[STREAM] Route handler called for session {session_id}")
     session = db.get(ChatSession, session_id)
     if not session or session.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -296,23 +299,23 @@ async def stream_chat_message(
     has_image = bool(chat_request.image)
 
     async def event_stream():
-        print("[STREAM] Starting event_stream")
+        logger.info("[STREAM] Starting event_stream")
         yield f"data: {json.dumps({'type': 'status', 'message': 'Searching your uploaded documents...'})}\n\n"
 
         sources_list = []
         sys_identity = get_system_identity(chat_request.language)
-        print("[STREAM] Got system identity")
+        logger.info("[STREAM] Got system identity")
 
         if not has_image:
             try:
-                print("[STREAM] Starting RAG search")
+                logger.info("[STREAM] Starting RAG search")
                 from ..services.embedding_service import generate_embeddings
                 from ..services.qdrant_service import search_points
                 from ..models.document import Document
 
-                print(f"[STREAM] Generating embeddings for query: {retrieval_query[:50]}")
+                logger.info(f"[STREAM] Generating embeddings for query: {retrieval_query[:50]}")
                 query_vector = generate_embeddings([retrieval_query])[0]
-                print("[STREAM] Embeddings generated")
+                logger.info("[STREAM] Embeddings generated")
 
                 session_results = []
                 if active_doc_ids:
@@ -374,9 +377,9 @@ async def stream_chat_message(
                                 })
                                 seen_src.add(doc_id)
             except Exception as e:
-                print(f"RAG failed in stream: {e}")
+                logger.error(f"RAG failed in stream: {e}")
 
-        print("[STREAM] About to yield prepare status")
+        logger.info("[STREAM] About to yield prepare status")
         yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing source-based answer...'})}\n\n"
 
         vllm_messages = [{"role": "system", "content": sys_identity}]
@@ -397,26 +400,26 @@ async def stream_chat_message(
             "top_p": 0.9,
         }
 
-        print(f"[STREAM] About to call vLLM at {url} with model={settings.LLM_A_MODEL}")
+        logger.info(f"[STREAM] About to call vLLM at {url} with model={settings.LLM_A_MODEL}")
         try:
-            print("[STREAM] Creating httpx client")
+            logger.info("[STREAM] Creating httpx client")
             async with httpx.AsyncClient(timeout=300.0) as client:
-                print("[STREAM] Streaming from vLLM...")
+                logger.info("[STREAM] Streaming from vLLM...")
                 async with client.stream("POST", url, json=payload, headers=headers) as response:
-                    print(f"[STREAM] Got vLLM response: {response.status_code}")
+                    logger.info(f"[STREAM] Got vLLM response: {response.status_code}")
                     if response.status_code != 200:
                         body = await response.aread()
-                        print(f"[STREAM] vLLM error body: {body[:500]}")
+                        logger.error(f"[STREAM] vLLM error body: {body[:500]}")
                         yield f"data: {json.dumps({'token': f'AI engine returned error {response.status_code}.', 'done': True})}\n\n"
                         return
-                    print("[STREAM] Starting to read vLLM lines")
+                    logger.info("[STREAM] Starting to read vLLM lines")
                     token_count = 0
                     async for line in response.aiter_lines():
                         if not line.startswith("data: "):
                             continue
                         chunk = line[6:]
                         if chunk == "[DONE]":
-                            print("[STREAM] Got [DONE]")
+                            logger.info("[STREAM] Got [DONE]")
                             break
                         try:
                             data = json.loads(chunk)
@@ -426,16 +429,16 @@ async def stream_chat_message(
                                 if token:
                                     token_count += 1
                                     full_response += token
-                                    print(f"[STREAM] Token {token_count}: {token[:20]}")
+                                    logger.debug(f"[STREAM] Token {token_count}: {token[:20]}")
                                     yield f"data: {json.dumps({'token': token})}\n\n"
                         except json.JSONDecodeError:
                             continue
         except Exception as e:
-            print(f"[STREAM] Streaming error: {e}")
+            logger.error(f"[STREAM] Streaming error: {e}")
             yield f"data: {json.dumps({'token': 'Error connecting to AI engine.', 'done': True})}\n\n"
             return
 
-        print(f"[STREAM] Done. tokens={len(full_response)}")
+        logger.info(f"[STREAM] Done. tokens={len(full_response)}")
 
         # Skip suggestions during streaming (would block the async generator)
         # Could generate async in background if needed
@@ -472,11 +475,11 @@ async def stream_chat_message(
                 },
             )
         except Exception as e:
-            print(f"[STREAM] Error saving message: {e}")
+            logger.error(f"[STREAM] Error saving message: {e}")
 
         yield f"data: {json.dumps({'done': True, 'sources': sources_list, 'suggestions': suggestions})}\n\n"
 
-    print("[STREAM] About to return StreamingResponse with event_stream generator")
+    logger.info("[STREAM] About to return StreamingResponse with event_stream generator")
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 @router.post("/sessions/{session_id}/files")
@@ -667,7 +670,7 @@ async def stream_chat_with_file(
                 async with client.stream("POST", url, json=payload, headers=headers) as response:
                     if response.status_code != 200:
                         body = await response.aread()
-                        print(f"[STREAM-FILE] vLLM error {response.status_code}: {body[:300]}")
+                        logger.error(f"[STREAM-FILE] vLLM error {response.status_code}: {body[:300]}")
                         yield f"data: {json.dumps({'token': 'Error connecting to AI engine.'})}\n\n"
                     else:
                         async for line in response.aiter_lines():
@@ -686,7 +689,7 @@ async def stream_chat_with_file(
                             except json.JSONDecodeError:
                                 continue
         except Exception as e:
-            print(f"[STREAM-FILE] Error: {e}")
+            logger.error(f"[STREAM-FILE] Error: {e}")
             yield f"data: {json.dumps({'token': 'Error connecting to AI engine.'})}\n\n"
 
         try:
@@ -707,7 +710,7 @@ async def stream_chat_with_file(
             db.commit()
             _update_session_summary(session, message, full_response, db)
         except Exception as e:
-            print(f"[STREAM-FILE] Error saving message: {e}")
+            logger.error(f"[STREAM-FILE] Error saving message: {e}")
 
         yield f"data: {json.dumps({'done': True, 'id': doc.id, 'document_id': doc.id})}\n\n"
 
