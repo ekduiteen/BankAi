@@ -268,15 +268,18 @@ export default function ChatAssistant() {
   }, []);
 
   // ── File upload ──────────────────────────────────────────────────────────
-  const handleFileSelect = async (e) => {
-    const file = e.target.files[0];
+  const handleFileSelect = useCallback(async (file, sid = null) => {
     if (!file) return;
 
+    let uploadSessionId = sid || sessionId;
+
     // Create session if needed
-    if (!sessionId) {
+    if (!uploadSessionId) {
       try {
         const r = await api.post('/chat/sessions', { title: 'New Analysis' });
-        setSessionId(r.data.id);
+        uploadSessionId = r.data.id;
+        setSessionId(uploadSessionId);
+        navigate(`?session=${uploadSessionId}`);
       } catch (err) {
         console.error('Failed to create session:', err.response?.data || err.message);
         setActiveDocuments(prev => [...prev, {
@@ -287,7 +290,7 @@ export default function ChatAssistant() {
       }
     }
 
-    const tmpId = `tmp-${Date.now()}`;
+    const tmpId = `tmp-${Date.now()}-${Math.random()}`;
     setActiveDocuments(prev => [...prev, {
       id: tmpId, name: file.name, status: 'uploading',
       processing_progress: 0, processing_message: 'Uploading document...',
@@ -296,7 +299,7 @@ export default function ChatAssistant() {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      const r = await api.post(`/chat/sessions/${sessionId}/files`, fd);
+      const r = await api.post(`/chat/sessions/${uploadSessionId}/files`, fd);
       setActiveDocuments(prev =>
         prev.map(d => d.id === tmpId ? { ...d, ...r.data, name: file.name, status: 'uploaded' } : d)
       );
@@ -310,17 +313,41 @@ export default function ChatAssistant() {
             } : d)
       );
     }
-    if (fileRef.current) fileRef.current.value = '';
-  };
+  }, [sessionId, navigate]);
 
-  // ── Handle drop zone files ───────────────────────────────────────────────
+  // ── Handle file input ────────────────────────────────────────────────────
+  const handleFileInput = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (file) await handleFileSelect(file);
+    if (fileRef.current) fileRef.current.value = '';
+  }, [handleFileSelect]);
+
+  // ── Handle drop zone files (parallel uploads) ────────────────────────────
   const handleDropZoneFiles = useCallback(async (files) => {
     const fileArray = Array.from(files);
-    for (const file of fileArray) {
-      // Reuse the existing upload logic by creating a fake event
-      await handleFileSelect({ target: { files: [file] } });
+    if (fileArray.length === 0) return;
+
+    // Create session once if needed
+    let uploadSessionId = sessionId;
+    if (!uploadSessionId) {
+      try {
+        const r = await api.post('/chat/sessions', { title: 'New Analysis' });
+        uploadSessionId = r.data.id;
+        setSessionId(uploadSessionId);
+        navigate(`?session=${uploadSessionId}`);
+      } catch (err) {
+        console.error('Failed to create session:', err.response?.data || err.message);
+        return;
+      }
     }
-  }, [handleFileSelect]);
+
+    // Upload with concurrency limit of 3
+    const CONCURRENCY = 3;
+    for (let i = 0; i < fileArray.length; i += CONCURRENCY) {
+      const batch = fileArray.slice(i, i + CONCURRENCY);
+      await Promise.all(batch.map(file => handleFileSelect(file, uploadSessionId)));
+    }
+  }, [sessionId, handleFileSelect, navigate]);
 
   const { isDragging, dropHandlers } = useDropZone(handleDropZoneFiles);
 
@@ -583,7 +610,7 @@ export default function ChatAssistant() {
                 disabled={isLoading}>
                 <span className="material-symbols-outlined text-[22px]">attachment</span>
               </button>
-              <input type="file" ref={fileRef} onChange={handleFileSelect} className="hidden" accept={FILE_ACCEPT} data-testid="file-upload" />
+              <input type="file" ref={fileRef} onChange={handleFileInput} className="hidden" accept={FILE_ACCEPT} data-testid="file-upload" />
               <textarea
                 data-testid="chat-input"
                 ref={textareaRef}
