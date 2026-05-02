@@ -482,7 +482,7 @@ export const PROCESSES = [
         department: 'Legal & Compliance',
         contactRole: 'Legal Officer',
         durationDays: 14,
-        description: 'Issue legal notice through bank's attorney. File case with Asset Recovery Debt Collection (ARDC) division if necessary.',
+        description: "Issue legal notice through bank's attorney. File case with Asset Recovery Debt Collection (ARDC) division if necessary.",
         requiredDocs: ['Demand Notice Proof of Service', 'Loan Agreement', 'Mortgage Deed', 'Collateral Documents'],
         outputDocs: ['Legal Notice', 'ARDC Filing Acknowledgment'],
         escalationTo: 'Head of Legal',
