@@ -52,8 +52,15 @@ async def upload_document(
     ensure_upload_dir()
     safe_name = f"{current_user.bank_id}_{uuid.uuid4().hex}{ext}"
     file_path = os.path.join(UPLOAD_DIR, safe_name)
+
+    # Read file content asynchronously
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="File is empty")
+
+    # Write to disk
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(content)
 
     doc = Document(
         bank_id=current_user.bank_id,

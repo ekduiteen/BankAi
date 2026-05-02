@@ -511,12 +511,17 @@ async def upload_session_file(
     safe_name = _safe_filename(session_id, file.filename)
     file_path = os.path.join(CHAT_UPLOAD_DIR, safe_name)
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Read file content asynchronously
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="File is empty")
 
-    if os.path.getsize(file_path) > MAX_UPLOAD_BYTES:
-        os.remove(file_path)
+    if len(content) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=400, detail="File exceeds 50 MB limit")
+
+    # Write to disk
+    with open(file_path, "wb") as buffer:
+        buffer.write(content)
 
     file_ext = ext.lstrip(".")
     doc = Document(
