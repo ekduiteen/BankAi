@@ -37,8 +37,6 @@ export default function Documents() {
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadForm, setUploadForm] = useState({ title: '', document_type: 'policy', access_level: 0, file: null });
-  const [showUpload, setShowUpload] = useState(false);
   const [miniChatInput, setMiniChatInput]   = useState('');
   const [miniChatMsgs, setMiniChatMsgs]     = useState([]);
   const [miniChatLoading, setMiniChatLoading] = useState(false);
@@ -128,23 +126,6 @@ export default function Documents() {
     } catch (_) {}
   };
 
-  const handleUploadSubmit = async (e) => {
-    e.preventDefault();
-    if (!uploadForm.file) return;
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('title', uploadForm.title || uploadForm.file.name);
-      fd.append('document_type', uploadForm.document_type);
-      fd.append('access_level', uploadForm.access_level);
-      fd.append('file', uploadForm.file);
-      await api.post('/documents/upload', fd);
-      setShowUpload(false);
-      setUploadForm({ title: '', document_type: 'policy', access_level: 0, file: null });
-      fetchDocs();
-    } catch (_) {}
-    setUploading(false);
-  };
 
   const askAboutDoc = async () => {
     if (!miniChatInput.trim() || !selected) return;
@@ -206,78 +187,49 @@ export default function Documents() {
       {/* Main library panel */}
       <section className="flex-1 flex flex-col p-8 overflow-y-auto border-r border-slate-200 bg-background">
         {/* Header */}
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h1 className="text-h1 font-h1 text-on-surface mb-1">Document Library</h1>
-            <p className="text-body-md text-outline">Manage and analyze your financial records.</p>
-          </div>
-          <div className="flex gap-2">
-            <div className="relative">
-              <input value={search} onChange={e => setSearch(e.target.value)}
-                className="bg-slate-100 border-none rounded px-4 py-2 pl-9 text-body-sm focus:ring-2 focus:ring-secondary focus:bg-white transition-all w-56 outline-none"
-                placeholder="Search files..." />
-              <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-slate-400 text-[18px]">search</span>
-            </div>
-            {isAdmin && (
-              <button onClick={() => setShowUpload(true)}
-                className="btn-primary flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                Upload
-              </button>
-            )}
+        <div className="mb-6">
+          <h1 className="text-h1 font-h1 text-on-surface mb-1">Document Library</h1>
+          <p className="text-body-md text-outline mb-4">Manage and analyze your financial records.</p>
+
+          {/* Search */}
+          <div className="relative max-w-xs">
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              className="bg-slate-100 border-none rounded px-4 py-2 pl-9 text-body-sm focus:ring-2 focus:ring-secondary focus:bg-white transition-all w-full outline-none"
+              placeholder="Search files..." />
+            <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-slate-400 text-[18px]">search</span>
           </div>
         </div>
 
-        {/* Upload modal */}
-        {showUpload && (
-          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-            <div className="bg-white border border-slate-200 rounded-xl shadow-panel w-full max-w-md">
-              <div className="flex items-center justify-between p-6 border-b border-slate-200">
-                <h3 className="font-semibold text-on-surface">Upload Document to Library</h3>
-                <button onClick={() => setShowUpload(false)} className="text-slate-400 hover:text-slate-900">
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-              <form onSubmit={handleUploadSubmit} className="p-6 space-y-4">
-                <div>
-                  <label className="label-caps text-slate-500 mb-1 block">Document Title</label>
-                  <input value={uploadForm.title} onChange={e => setUploadForm(p => ({ ...p, title: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-body-sm focus:outline-none focus:ring-1 focus:ring-secondary"
-                    placeholder="e.g. Loan Policy Manual 2024" />
-                </div>
-                <div>
-                  <label className="label-caps text-slate-500 mb-1 block">Document Type</label>
-                  <select value={uploadForm.document_type} onChange={e => setUploadForm(p => ({ ...p, document_type: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-body-sm focus:outline-none focus:ring-1 focus:ring-secondary">
-                    {['policy', 'procedure', 'manual', 'compliance', 'report', 'circular', 'directive', 'other'].map(t => (
-                      <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="label-caps text-slate-500 mb-1 block">Access Level</label>
-                  <select value={uploadForm.access_level} onChange={e => setUploadForm(p => ({ ...p, access_level: parseInt(e.target.value) }))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded px-3 py-2 text-body-sm focus:outline-none focus:ring-1 focus:ring-secondary">
-                    <option value={0}>General (all staff)</option>
-                    <option value={1}>Restricted (admin + compliance)</option>
-                    <option value={2}>Confidential (admin only)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="label-caps text-slate-500 mb-1 block">File</label>
-                  <input type="file" ref={fileRef}
-                    accept=".pdf,.docx,.txt,.xlsx,.xls,.pptx,.ppt,.jpg,.jpeg,.png"
-                    onChange={e => setUploadForm(p => ({ ...p, file: e.target.files[0] }))}
-                    className="w-full text-body-sm text-slate-600" />
-                </div>
-                <button type="submit" disabled={uploading || !uploadForm.file}
-                  className="w-full btn-primary disabled:opacity-50">
-                  {uploading ? 'Uploading...' : 'Upload Document'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+        {/* Simple drag-and-drop upload area */}
+        <div className="mb-8 p-8 border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 text-center transition-all hover:border-secondary hover:bg-primary/5"
+          {...dropHandlers}
+          onDragEnter={(e) => { e.preventDefault(); dropHandlers.onDragEnter(e); }}
+          onDragLeave={(e) => { e.preventDefault(); dropHandlers.onDragLeave(e); }}
+          onDragOver={(e) => { e.preventDefault(); dropHandlers.onDragOver(e); }}
+          onDrop={(e) => { e.preventDefault(); dropHandlers.onDrop(e); }}
+          style={{ borderColor: isDragging ? 'var(--color-primary)' : undefined, backgroundColor: isDragging ? 'rgba(var(--color-primary), 0.05)' : undefined }}
+        >
+          <span className="material-symbols-outlined text-4xl text-secondary mb-2 block">cloud_upload</span>
+          <p className="text-sm font-semibold text-on-surface mb-1">Drag files here to upload</p>
+          <p className="text-xs text-slate-500 mb-4">or click below to browse</p>
+          <input
+            type="file"
+            ref={fileRef}
+            accept=".pdf,.docx,.txt,.xlsx,.xls,.pptx,.ppt,.jpg,.jpeg,.png"
+            onChange={(e) => {
+              if (e.target.files?.[0]) handleDropFiles([e.target.files[0]]);
+            }}
+            className="hidden"
+            id="doc-upload-input"
+          />
+          <label htmlFor="doc-upload-input" className="inline-block">
+            <button type="button" onClick={() => document.getElementById('doc-upload-input').click()}
+              className="btn-secondary text-xs">
+              <span className="material-symbols-outlined text-[16px]">upload_file</span>
+              Choose File
+            </button>
+          </label>
+        </div>
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
@@ -420,15 +372,9 @@ export default function Documents() {
 
             {docs.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-20">
-                <span className="material-symbols-outlined text-5xl text-slate-200 mb-4">folder_managed</span>
+                <span className="material-symbols-outlined text-5xl text-slate-200 mb-4">folder_open</span>
                 <p className="text-h2 font-h2 text-on-surface mb-2">No documents yet</p>
-                <p className="text-body-sm text-outline mb-6">Upload your first document to build the knowledge base.</p>
-                {isAdmin && (
-                  <button onClick={() => setShowUpload(true)} className="btn-primary flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                    Upload Document
-                  </button>
-                )}
+                <p className="text-body-sm text-outline">Drag files above or use the upload button to get started.</p>
               </div>
             )}
           </>
@@ -436,47 +382,24 @@ export default function Documents() {
       </section>
 
       {/* Right preview + mini chat */}
-      {/* Upload queue strip */}
-      {uploadQueue.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-30">
-          <div className="max-h-48 overflow-y-auto p-4 space-y-2">
-            <p className="text-xs font-bold text-slate-500 uppercase">Uploading {uploadQueue.filter(u => u.status !== 'failed').length} file{uploadQueue.filter(u => u.status !== 'failed').length !== 1 ? 's' : ''}</p>
-            <div className="space-y-2">
-              {uploadQueue.map(item => (
-                <div key={item.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded border border-slate-200">
-                  <div className="w-8 h-8 rounded bg-slate-200 flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-[14px] text-slate-600">insert_drive_file</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-900 truncate">{item.name}</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      {item.status === 'failed' ? (
-                        <span className="text-[10px] text-error font-bold">Upload failed</span>
-                      ) : (
-                        <>
-                          <div className="flex-1 h-1 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-secondary transition-all duration-300" style={{ width: `${item.progress || 0}%` }} />
-                          </div>
-                          <span className="text-[10px] text-slate-500 font-bold flex-shrink-0">{item.progress || 0}%</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {['ready', 'approved'].includes(item.status) && (
-                    <span className="text-[11px] font-bold text-green-600 flex-shrink-0 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[13px]">check_circle</span>
-                      {item.document_type || 'other'}
-                    </span>
-                  )}
+      {/* Upload queue toast */}
+      {uploadQueue.some(u => !['ready', 'approved', 'failed'].includes(u.status)) && (
+        <div className="fixed bottom-6 right-6 bg-white border border-slate-200 rounded-lg shadow-lg p-4 w-80 z-30">
+          <p className="text-xs font-bold text-slate-500 uppercase mb-3">Uploading documents</p>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {uploadQueue.filter(u => !['ready', 'approved', 'failed'].includes(u.status)).map(item => (
+              <div key={item.id} className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center flex-shrink-0 text-xs">
+                  <span className="material-symbols-outlined text-[12px] text-slate-600">insert_drive_file</span>
                 </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setUploadQueue(prev => prev.filter(u => ['ready', 'approved', 'failed'].includes(u.status) === false))}
-              className="text-xs text-slate-500 hover:text-slate-900 font-semibold mt-2"
-            >
-              Clear completed
-            </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-slate-900 truncate">{item.name}</p>
+                  <div className="mt-0.5 h-1 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-secondary transition-all duration-300" style={{ width: `${item.progress || 0}%` }} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

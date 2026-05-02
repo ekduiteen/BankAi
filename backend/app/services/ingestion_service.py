@@ -123,26 +123,8 @@ def process_document(document_id: int):
             # 1. Extract text
             text = extract_text(doc.file_path, doc.file_type)
 
-            # Auto-catalog the document
-            doc.status = "cataloging"
-            doc.processing_progress = 25
-            doc.processing_message = "Classifying document..."
-            db.add(doc)
-            db.commit()
-
-            catalog = auto_catalog(text, doc.file_name)
-            # Only update if current type is "other" or fields are empty
-            if doc.document_type == "other":
-                doc.document_type = catalog["document_type"]
-            if not doc.department:
-                doc.department = catalog["department"]
-            if doc.title == doc.file_name:  # title was auto-filled with filename
-                doc.title = catalog["title"]
-            db.add(doc)
-            db.commit()
-
             doc.status = "chunking"
-            doc.processing_progress = 40
+            doc.processing_progress = 30
             doc.processing_message = "Preparing document for search..."
             db.add(doc)
             db.commit()
@@ -226,6 +208,19 @@ def process_document(document_id: int):
             doc.processing_message = "Document is ready. You can ask follow-up questions."
             db.add(doc)
             db.commit()
+
+            # Auto-catalog in background (non-blocking)
+            try:
+                from .llm_service import call_llm
+                catalog = auto_catalog(text, doc.file_name)
+                if doc.document_type == "other":
+                    doc.document_type = catalog["document_type"]
+                if not doc.department:
+                    doc.department = catalog["department"]
+                db.add(doc)
+                db.commit()
+            except Exception:
+                pass  # Cataloging failure doesn't block document readiness
 
         except Exception as e:
             try:
