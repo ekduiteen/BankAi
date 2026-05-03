@@ -142,6 +142,7 @@ export default function ChatAssistant() {
   const [abortCtrl, setAbortCtrl]             = useState(null);
   const [modelMode, setModelMode]             = useState('auto');
   const [routingHint, setRoutingHint]         = useState(null);
+  const [selectedLLM, setSelectedLLM]         = useState(null);
 
   const endRef      = useRef(null);
   const bodyRef     = useRef(null);
@@ -404,7 +405,8 @@ export default function ChatAssistant() {
           active_document_ids: activeDocuments
             .map(d => Number(d.document_id || d.id))
             .filter(id => Number.isInteger(id)),
-          ...(modelOverride ? { model_override: modelOverride } : {}),
+          ...(selectedLLM ? { model_override: selectedLLM } : {}),
+          ...(modelOverride && !selectedLLM ? { model_override: modelOverride } : {}),
         }),
         signal: ctrl.signal,
       });
@@ -495,6 +497,38 @@ export default function ChatAssistant() {
           </div>
           <div className="flex items-center gap-3">
             <ModelModeSelector value={modelMode} onChange={setModelMode} compact />
+            {/* LLM Model Selector */}
+            <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
+              <div className="relative group">
+                <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors">
+                  <span className="material-symbols-outlined text-[14px]">smart_toy</span>
+                  <span className="max-w-[120px] truncate">{selectedLLM ? selectedLLM.split('-')[0] : 'Model'}</span>
+                  <span className="material-symbols-outlined text-[12px]">expand_more</span>
+                </button>
+                <div className="absolute right-0 top-8 w-56 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 hidden group-hover:block">
+                  <button onClick={() => setSelectedLLM(null)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${!selectedLLM ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                    Auto (Default)
+                  </button>
+                  <button onClick={() => setSelectedLLM('lipi-llm')}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${selectedLLM === 'lipi-llm' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <span className="material-symbols-outlined text-[14px]">bolt</span>
+                    LipiLLM (Fast)
+                  </button>
+                  <button onClick={() => setSelectedLLM('gemma-4-26b-4bit')}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${selectedLLM === 'gemma-4-26b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <span className="material-symbols-outlined text-[14px]">psychology</span>
+                    Gemma 26B (Analyst)
+                  </button>
+                  <button onClick={() => setSelectedLLM('qwen3.6-27b-4bit')}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${selectedLLM === 'qwen3.6-27b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <span className="material-symbols-outlined text-[14px]">article</span>
+                    Qwen 27B (Report)
+                  </button>
+                </div>
+              </div>
+            </div>
             <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
               <button onClick={createNewSession} className="flex items-center gap-1 text-xs border border-slate-200 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors text-slate-600">
                 <span className="material-symbols-outlined text-[15px]">add_comment</span> New

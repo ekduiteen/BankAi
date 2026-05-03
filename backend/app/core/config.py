@@ -47,15 +47,26 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "bankai_uploads"))
     CHAT_UPLOAD_DIR: str = os.getenv("CHAT_UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "bankai_chat_uploads"))
 
-    # Primary vLLM — used for RAG, chat, complex reasoning
+    # vLLM backends — each backend can serve one or more models
+    # LLM_A (vllm-b): LipiLLM fast inference
     LLM_A_API_BASE: str = os.getenv("LLM_A_API_BASE", "http://localhost:8001")
     LLM_A_MODEL: str = os.getenv("LLM_A_MODEL", "model-a")
     LLM_A_API_KEY: str = os.getenv("LLM_A_API_KEY", "no-key")
 
-    # Secondary vLLM — used for fast tasks: summarize, translate, draft
+    # LLM_B (vllm-b): LipiLLM (same as A for now)
     LLM_B_API_BASE: str = os.getenv("LLM_B_API_BASE", "http://localhost:8002")
     LLM_B_MODEL: str = os.getenv("LLM_B_MODEL", "model-b")
     LLM_B_API_KEY: str = os.getenv("LLM_B_API_KEY", "no-key")
+
+    # LLM_C (vllm-c): Gemma-4 26B for deeper analysis
+    LLM_C_API_BASE: str = os.getenv("LLM_C_API_BASE", "http://localhost:8003")
+    LLM_C_MODEL: str = os.getenv("LLM_C_MODEL", "gemma-4-26b-4bit")
+    LLM_C_API_KEY: str = os.getenv("LLM_C_API_KEY", "no-key")
+
+    # LLM_D (vllm-d): Qwen3.6 27B for report generation
+    LLM_D_API_BASE: str = os.getenv("LLM_D_API_BASE", "http://localhost:8004")
+    LLM_D_MODEL: str = os.getenv("LLM_D_MODEL", "qwen3.6-27b-4bit")
+    LLM_D_API_KEY: str = os.getenv("LLM_D_API_KEY", "no-key")
 
     # Legacy single-LLM fields kept for backward compat (points to A by default)
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "vllm")

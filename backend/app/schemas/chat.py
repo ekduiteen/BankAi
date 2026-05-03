@@ -38,3 +38,4 @@ class ChatRequest(BaseModel):
     image: Optional[str] = None
     language: Optional[str] = "en"
     active_document_ids: Optional[List[int]] = None
+    model_override: Optional[str] = None

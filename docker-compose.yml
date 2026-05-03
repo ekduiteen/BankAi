@@ -57,6 +57,12 @@ services:
       - LLM_B_API_BASE=http://bankai-vllm-b:8000
       - LLM_B_MODEL=lipi-llm
       - LLM_B_API_KEY=no-key
+      - LLM_C_API_BASE=http://bankai-vllm-c:8000
+      - LLM_C_MODEL=gemma-4-26b-4bit
+      - LLM_C_API_KEY=no-key
+      - LLM_D_API_BASE=http://bankai-vllm-d:8000
+      - LLM_D_MODEL=qwen3.6-27b-4bit
+      - LLM_D_API_KEY=no-key
     ports:
       - "8000:8000"
 

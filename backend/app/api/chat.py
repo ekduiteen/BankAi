@@ -32,6 +32,22 @@ from ..services.guardrail_service import detect_prompt_injection, detect_and_mas
 from ..services.query_rewrite_service import rewrite_query_for_retrieval
 from ..core.config import settings
 
+
+def _resolve_model_endpoint(model_name: Optional[str]) -> tuple[str, str, str]:
+    """
+    Map model name to (API_BASE, MODEL, API_KEY).
+    Returns default (LLM_A) if model_name is None or unknown.
+    """
+    model_map = {
+        'lipi-llm': (settings.LLM_A_API_BASE, settings.LLM_A_MODEL, settings.LLM_A_API_KEY),
+        'gemma-4-26b-4bit': (settings.LLM_C_API_BASE, settings.LLM_C_MODEL, settings.LLM_C_API_KEY),
+        'qwen3.6-27b-4bit': (settings.LLM_D_API_BASE, settings.LLM_D_MODEL, settings.LLM_D_API_KEY),
+    }
+    if model_name in model_map:
+        return model_map[model_name]
+    # Default to LLM_A if not found
+    return (settings.LLM_A_API_BASE, settings.LLM_A_MODEL, settings.LLM_A_API_KEY)
+
 router = APIRouter()
 
 CHAT_UPLOAD_DIR = settings.CHAT_UPLOAD_DIR
@@ -391,18 +407,21 @@ async def stream_chat_message(
                 "content": msg.content,
             })
 
+        # Resolve model endpoint based on user selection
+        api_base, model_name, api_key = _resolve_model_endpoint(chat_request.model_override)
+
         full_response = ""
-        url = f"{settings.LLM_A_API_BASE}/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {settings.LLM_A_API_KEY}"}
+        url = f"{api_base}/v1/chat/completions"
+        headers = {"Authorization": f"Bearer {api_key}"}
         payload = {
-            "model": settings.LLM_A_MODEL,
+            "model": model_name,
             "messages": vllm_messages,
             "stream": True,
             "temperature": 0.7,
             "top_p": 0.9,
         }
 
-        logger.info(f"[STREAM] About to call vLLM at {url} with model={settings.LLM_A_MODEL}")
+        logger.info(f"[STREAM] About to call vLLM at {url} with model={model_name}")
         try:
             logger.info("[STREAM] Creating httpx client")
             async with httpx.AsyncClient(timeout=300.0) as client:
