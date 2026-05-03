@@ -48,6 +48,15 @@ def _resolve_model_endpoint(model_name: Optional[str]) -> tuple[str, str, str]:
     # Default to LLM_A if not found
     return (settings.LLM_A_API_BASE, settings.LLM_A_MODEL, settings.LLM_A_API_KEY)
 
+
+def _model_supports_vision(model_name: Optional[str]) -> bool:
+    """
+    Check if a model supports vision/image analysis.
+    For now, none of the vLLM text models support vision — fallback to general prompt.
+    """
+    # All current models are text-only; would need multimodal models to support vision
+    return False
+
 router = APIRouter()
 
 CHAT_UPLOAD_DIR = settings.CHAT_UPLOAD_DIR
@@ -317,6 +326,12 @@ async def stream_chat_message(
 
     async def event_stream():
         logger.info("[STREAM] Starting event_stream")
+
+        # Check if user selected a model and uploaded an image
+        selected_model = chat_request.model_override
+        if has_image and selected_model and not _model_supports_vision(selected_model):
+            yield f"data: {json.dumps({'type': 'status', 'message': '⚠️ Warning: The selected model does not support image analysis. Using text-based analysis instead.'})}\n\n"
+
         yield f"data: {json.dumps({'type': 'status', 'message': 'Searching your uploaded documents...'})}\n\n"
 
         sources_list = []

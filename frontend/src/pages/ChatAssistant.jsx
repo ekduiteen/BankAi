@@ -363,6 +363,16 @@ export default function ChatAssistant() {
     const content = (override ?? input).trim();
     if (!content || isLoading || !sessionId) return;
 
+    // Warn if user selected a model and uploaded images (images not supported by text-only models)
+    const hasImage = activeDocuments.some(d => ['jpg', 'jpeg', 'png'].includes(d.file_type || ''));
+    if (hasImage && selectedLLM) {
+      setMessages(prev => [...prev, {
+        id: Date.now(), role: 'assistant',
+        content: `⚠️ **Note:** The selected model (${selectedLLM.split('-')[0]}) is text-only and doesn't support image analysis. Text content from images will be extracted, but visual analysis won't be performed.`,
+        sources: [], suggestions: [],
+      }]);
+    }
+
     // Warn if docs still processing
     const busy = activeDocuments.filter(
       d => !['ready','approved','indexed'].includes(d.status) && !String(d.id).startsWith('tmp')
@@ -505,26 +515,38 @@ export default function ChatAssistant() {
                   <span className="max-w-[120px] truncate">{selectedLLM ? selectedLLM.split('-')[0] : 'Model'}</span>
                   <span className="material-symbols-outlined text-[12px]">expand_more</span>
                 </button>
-                <div className="absolute right-0 top-8 w-56 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 hidden group-hover:block">
+                <div className="absolute right-0 top-8 w-64 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 hidden group-hover:block">
                   <button onClick={() => setSelectedLLM(null)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${!selectedLLM ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-                    Auto (Default)
+                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${!selectedLLM ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <span className="material-symbols-outlined text-[14px] mt-0.5">auto_awesome</span>
+                    <div className="flex-1 text-left">
+                      <div className="font-semibold">Auto (Default)</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Smart routing for any task</div>
+                    </div>
                   </button>
                   <button onClick={() => setSelectedLLM('lipi-llm')}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${selectedLLM === 'lipi-llm' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span className="material-symbols-outlined text-[14px]">bolt</span>
-                    LipiLLM (Fast)
+                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'lipi-llm' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <span className="material-symbols-outlined text-[14px] mt-0.5">bolt</span>
+                    <div className="flex-1 text-left">
+                      <div className="font-semibold">LipiLLM (Fast)</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Instant text analysis</div>
+                    </div>
                   </button>
                   <button onClick={() => setSelectedLLM('gemma-4-26b-4bit')}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${selectedLLM === 'gemma-4-26b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span className="material-symbols-outlined text-[14px]">psychology</span>
-                    Gemma 26B (Analyst)
+                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'gemma-4-26b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <span className="material-symbols-outlined text-[14px] mt-0.5">psychology</span>
+                    <div className="flex-1 text-left">
+                      <div className="font-semibold">Gemma 26B (Analyst)</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Deep reasoning on documents</div>
+                    </div>
                   </button>
                   <button onClick={() => setSelectedLLM('qwen3.6-27b-4bit')}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${selectedLLM === 'qwen3.6-27b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span className="material-symbols-outlined text-[14px]">article</span>
-                    Qwen 27B (Report)
+                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'qwen3.6-27b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                    <span className="material-symbols-outlined text-[14px] mt-0.5">article</span>
+                    <div className="flex-1 text-left">
+                      <div className="font-semibold">Qwen 27B (Report)</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Long-form content generation</div>
+                    </div>
                   </button>
                 </div>
               </div>
