@@ -76,13 +76,16 @@ function inlineFormat(text) {
   const re = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
   let m;
   while ((m = re.exec(text)) !== null) {
-    if (m.index > last) parts.push(<span key={last}>{text.slice(last, m.index)}</span>);
+    if (m.index > last) parts.push(<span key={last}>{text.slice(last, m.index).replace(/\*+/g, '')}</span>);
     if (m[2]) parts.push(<strong key={m.index} className="font-semibold">{m[2]}</strong>);
     else if (m[3]) parts.push(<em key={m.index}>{m[3]}</em>);
     else if (m[4]) parts.push(<code key={m.index} className="bg-slate-100 text-secondary px-1 rounded text-xs font-mono">{m[4]}</code>);
     last = m.index + m[0].length;
   }
-  if (last < text.length) parts.push(<span key={last}>{text.slice(last)}</span>);
+  if (last < text.length) {
+    const remaining = text.slice(last).replace(/\*+/g, '');
+    if (remaining) parts.push(<span key={last}>{remaining}</span>);
+  }
   return parts.length ? parts : text;
 }
 
@@ -182,16 +185,18 @@ export default function ChatAssistant() {
       if (loaded.length === 0) loaded.unshift(welcomeMsg());
       setMessages(loaded);
 
-      // Restore active session documents
+      // Restore active session documents (only for this session)
       const activeIds = safeJson(sessR.data.active_document_ids_json, []);
-      if (activeIds.length > 0) {
+      if (activeIds.length > 0 && sessR.data.id === id) {
         try {
           const docsR = await api.get('/documents?limit=200');
           const sessionDocs = docsR.data.filter(d =>
-            activeIds.includes(d.id) && d.session_id === id
+            activeIds.includes(d.id) && d.session_id === id && d.document_scope === 'session_upload'
           );
           setActiveDocuments(sessionDocs);
         } catch (_) {}
+      } else {
+        setActiveDocuments([]);
       }
     } catch (err) { console.error('loadSession', err); }
   }, []);
