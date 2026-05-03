@@ -324,14 +324,30 @@ export default function ChatAssistant() {
   // ── Handle file input ────────────────────────────────────────────────────
   const handleFileInput = useCallback(async (e) => {
     const file = e.target.files?.[0];
-    if (file) await handleFileSelect(file);
+    if (file) {
+      // Auto-switch to Auto mode if image uploaded with a specific model selected
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) && selectedLLM) {
+        setSelectedLLM(null);
+      }
+      await handleFileSelect(file);
+    }
     if (fileRef.current) fileRef.current.value = '';
-  }, [handleFileSelect]);
+  }, [handleFileSelect, selectedLLM]);
 
   // ── Handle drop zone files (parallel uploads) ────────────────────────────
   const handleDropZoneFiles = useCallback(async (files) => {
     const fileArray = Array.from(files);
     if (fileArray.length === 0) return;
+
+    // Auto-switch to Auto mode if image uploaded with a specific model selected
+    const hasImage = fileArray.some(f => {
+      const ext = f.name.split('.').pop().toLowerCase();
+      return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+    });
+    if (hasImage && selectedLLM) {
+      setSelectedLLM(null);
+    }
 
     // Create session once if needed
     let uploadSessionId = sessionId;
@@ -353,7 +369,7 @@ export default function ChatAssistant() {
       const batch = fileArray.slice(i, i + CONCURRENCY);
       await Promise.all(batch.map(file => handleFileSelect(file, uploadSessionId)));
     }
-  }, [sessionId, handleFileSelect, navigate]);
+  }, [sessionId, handleFileSelect, navigate, selectedLLM]);
 
   const { isDragging, dropHandlers } = useDropZone(handleDropZoneFiles);
 
@@ -362,16 +378,6 @@ export default function ChatAssistant() {
     e?.preventDefault();
     const content = (override ?? input).trim();
     if (!content || isLoading || !sessionId) return;
-
-    // Warn if user selected a model and uploaded images (images not supported by text-only models)
-    const hasImage = activeDocuments.some(d => ['jpg', 'jpeg', 'png'].includes(d.file_type || ''));
-    if (hasImage && selectedLLM) {
-      setMessages(prev => [...prev, {
-        id: Date.now(), role: 'assistant',
-        content: `⚠️ **Note:** The selected model (${selectedLLM.split('-')[0]}) is text-only and doesn't support image analysis. Text content from images will be extracted, but visual analysis won't be performed.`,
-        sources: [], suggestions: [],
-      }]);
-    }
 
     // Warn if docs still processing
     const busy = activeDocuments.filter(
