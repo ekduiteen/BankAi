@@ -15,7 +15,7 @@ const NAV_SECTIONS = [
     label: 'KNOWLEDGE',
     items: [
       { icon: 'folder_managed', label: 'Document Library',    to: '/documents',          permission: PERMISSIONS.VIEW_DOCUMENTS },
-      { icon: 'gavel',          label: 'Regulatory Library',  to: '/regulatory',         permission: PERMISSIONS.VIEW_REGULATORY_LIBRARY },
+      { icon: 'shield_alert',   label: 'Compliance Monitor',  to: '/regulatory',         permission: PERMISSIONS.VIEW_REGULATORY_LIBRARY },
     ],
   },
   {
