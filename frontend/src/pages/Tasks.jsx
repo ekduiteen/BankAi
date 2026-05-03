@@ -87,6 +87,8 @@ function TaskModal({ template, onClose }) {
   const [result, setResult]     = useState(null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
   const fileRef = useRef(null);
 
   const handleSubmit = async (e) => {
@@ -210,21 +212,57 @@ function TaskModal({ template, onClose }) {
                   Done — {result.template_name}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setResult(null)}
-                    className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 px-2 py-1.5 rounded hover:bg-slate-100 transition-colors">
-                    <span className="material-symbols-outlined text-[14px]">refresh</span>
-                    Run again
-                  </button>
+                  {!isEditing && (
+                    <>
+                      <button onClick={() => { setIsEditing(true); setEditContent(result.result); }}
+                        className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 px-2 py-1.5 rounded hover:bg-slate-100 transition-colors">
+                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                        Edit
+                      </button>
+                      <button onClick={() => setResult(null)}
+                        className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 px-2 py-1.5 rounded hover:bg-slate-100 transition-colors">
+                        <span className="material-symbols-outlined text-[14px]">refresh</span>
+                        Run again
+                      </button>
+                    </>
+                  )}
                   <ExportDropdown
-                    content={result.result}
+                    content={isEditing ? editContent : result.result}
                     title={result.template_name}
                     formats={result.suggested_formats}
                   />
                 </div>
               </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-800 whitespace-pre-wrap leading-relaxed max-h-[400px] overflow-y-auto font-mono">
-                {result.result}
-              </div>
+              {isEditing ? (
+                <div className="space-y-3">
+                  <textarea
+                    value={editContent}
+                    onChange={e => setEditContent(e.target.value)}
+                    rows={12}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900 rounded border border-slate-200 hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-3 py-1.5 text-xs bg-primary text-white rounded font-semibold hover:opacity-90 transition-all"
+                    >
+                      Done editing
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white border border-slate-200 rounded-lg p-4 text-sm text-slate-800 leading-relaxed max-h-[400px] overflow-y-auto space-y-2">
+                  {result.result.split('\n\n').map((para, i) => (
+                    <p key={i} className="whitespace-pre-wrap">{para}</p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
