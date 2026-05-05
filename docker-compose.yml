@@ -146,7 +146,7 @@ services:
     entrypoint: /bin/bash
     command:
       - -c
-      - "vllm serve /data/models/llm/qwen3.6-27b-gptq-4bit --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.35 --max-model-len 4096 --max-num-seqs 12 --dtype float16 --quantization gptq --served-model-name qwen3.6-27b-4bit --enable-prefix-caching"
+      - "echo 'vllm-d disabled - only Gemma models in use'; sleep infinity"
     volumes:
       - /data:/data
     ports:
