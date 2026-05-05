@@ -16,7 +16,7 @@ from app.models.token import RevokedToken  # noqa: F401
 config = context.config
 
 # Override sqlalchemy.url from environment variable
-database_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/bankai")
+database_url = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/lipicore")
 config.set_main_option("sqlalchemy.url", database_url)
 
 if config.config_file_name is not None:

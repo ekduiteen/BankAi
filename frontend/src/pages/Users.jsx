@@ -56,9 +56,9 @@ export default function Users() {
       setUsers(Array.isArray(res.data) ? res.data : []);
     } catch {
       setUsers([
-        { id: 1, name: 'Sarah Jenkins', email: 's.jenkins@bankai.com', role: 'compliance_officer', created_at: new Date().toISOString() },
-        { id: 2, name: 'Marcus Thorne', email: 'm.thorne@bankai.com',  role: 'compliance_officer', created_at: new Date(Date.now() - 86400000).toISOString() },
-        { id: 3, name: 'Elena Lu',      email: 'e.lu@bankai.com',      role: 'data_auditor',       created_at: new Date(Date.now() - 259200000).toISOString() },
+        { id: 1, name: 'Sarah Jenkins', email: 's.jenkins@lipicore.com', role: 'compliance_officer', created_at: new Date().toISOString() },
+        { id: 2, name: 'Marcus Thorne', email: 'm.thorne@lipicore.com',  role: 'compliance_officer', created_at: new Date(Date.now() - 86400000).toISOString() },
+        { id: 3, name: 'Elena Lu',      email: 'e.lu@lipicore.com',      role: 'data_auditor',       created_at: new Date(Date.now() - 259200000).toISOString() },
       ]);
     } finally {
       setLoading(false);

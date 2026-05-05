@@ -17,9 +17,9 @@ def create_super_admin():
                 session.commit()
                 session.refresh(bank)
                 
-            print(f"Creating super admin: admin@bankai.io")
+            print(f"Creating super admin: admin@lipicore.io")
             admin = User(
-                email="admin@bankai.io",
+                email="admin@lipicore.io",
                 password_hash=get_password_hash(settings.SUPER_ADMIN_PASSWORD),
                 name="Super Admin",
                 role="super_admin",

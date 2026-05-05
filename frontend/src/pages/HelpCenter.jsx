@@ -27,7 +27,7 @@ const CATEGORIES = [
   {
     icon: 'hub',
     title: 'Integrations',
-    description: 'Connect BankAi with core banking systems, data warehouses, SSO, and webhook consumers.',
+    description: 'Connect LipiCore with core banking systems, data warehouses, SSO, and webhook consumers.',
     articles: 7,
     tags: ['API', 'SSO', 'Webhooks'],
   },
@@ -55,7 +55,7 @@ export default function HelpCenter() {
         <div className="absolute inset-y-0 right-0 w-1/3 opacity-30 bg-[radial-gradient(circle_at_center,#316bf3_0%,transparent_70%)]" />
         <div className="relative z-10 max-w-3xl">
           <p className="font-label-caps text-label-caps text-on-primary-container uppercase tracking-widest mb-md">
-            BankAi Support Portal
+            LipiCore Support Portal
           </p>
           <h1 className="font-h1 text-h1 mb-md">Help Center</h1>
           <p className="font-body-lg text-body-lg text-slate-300 mb-lg">
@@ -135,7 +135,7 @@ export default function HelpCenter() {
             <div className="space-y-md">
               {[
                 ['chat_bubble_outline', 'Live Chat', 'Wait time: ~2 mins'],
-                ['mail', 'Email Support', 'enterprise@bankai.com'],
+                ['mail', 'Email Support', 'enterprise@lipicore.com'],
                 ['call', 'Priority Phone', '+1 (800) BANK-AI-1'],
               ].map(([icon, label, detail]) => (
                 <div key={label} className="flex items-start gap-md">

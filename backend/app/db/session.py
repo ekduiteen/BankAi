@@ -6,7 +6,7 @@ from alembic import command
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/bankai")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/lipicore")
 
 engine = create_engine(DATABASE_URL, echo=False)
 
