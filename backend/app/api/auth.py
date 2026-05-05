@@ -59,7 +59,7 @@ def login_access_token(
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=True,
+        secure=False,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
