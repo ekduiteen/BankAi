@@ -17,7 +17,7 @@ A secure, high-fidelity, enterprise-grade RAG-based AI assistant designed specif
 *   **Audit Logging:** Comprehensive logging of all queries, file uploads, and AI responses for regulatory compliance.
 
 ### 🛡️ Security & Privacy
-*   **Data Sovereignty:** Fully air-gapped capable; runs with local LLMs (Ollama) and self-hosted vector databases (Qdrant).
+*   **Data Sovereignty:** Fully air-gapped capable; runs with local vLLM model servers and self-hosted vector databases (Qdrant).
 *   **PII Masking:** Automatic detection and masking of sensitive Personally Identifiable Information (PII) before LLM processing.
 *   **RBAC:** Role-Based Access Control (Super Admin, Bank Admin, Staff) with bank-level data partitioning.
 
@@ -28,7 +28,7 @@ A secure, high-fidelity, enterprise-grade RAG-based AI assistant designed specif
 *   **Frontend:** React (Vite), Tailwind CSS, Lucide Icons.
 *   **Backend:** FastAPI (Python 3.10), SQLModel, PostgreSQL 15.
 *   **Vector Engine:** Qdrant (Semantic Search & Session Filtering).
-*   **LLM Orchestration:** Ollama (Private Local Inference).
+*   **LLM Orchestration:** vLLM with Redis-backed admission control for private local inference.
 *   **Storage:** MinIO (S3-compatible persistent storage).
 *   **Streaming:** Server-Sent Events (SSE) for both generation and document status tracking.
 
@@ -40,7 +40,8 @@ BankAi uses a decoupled **Worker-Observer** architecture for document processing
 1.  **Ingestion:** Files are uploaded to an async worker that handles OCR, chunking, and embedding.
 2.  **Streaming:** The UI subscribes to an SSE status stream to update progress cards in real-time.
 3.  **Retrieval:** Context is retrieved from Qdrant using a session-aware metadata filter.
-4.  **Generation:** Response is streamed token-by-token from the local LLM.
+4.  **Admission Control:** Redis coordinates per-model and per-user concurrency so GPU memory is protected under load.
+5.  **Generation:** Response is streamed token-by-token from the local vLLM runtime.
 
 ---
 
@@ -48,7 +49,8 @@ BankAi uses a decoupled **Worker-Observer** architecture for document processing
 
 ### Prerequisites
 *   Docker and Docker Compose.
-*   Ollama (if running LLM locally).
+*   NVIDIA container runtime for GPU-backed vLLM services.
+*   Local Gemma model files mounted on the inference host.
 
 ### Quick Start
 
@@ -61,7 +63,7 @@ BankAi uses a decoupled **Worker-Observer** architecture for document processing
 2.  **Environment Setup:**
     ```bash
     cp .env.example .env
-    # Ensure OLLAMA_KEEP_ALIVE=-1 in your compose/env to prevent model unloading lag.
+    # Configure secrets, public origin, model paths, and TLS settings for your host.
     ```
 
 3.  **Run with Docker Compose:**
@@ -79,6 +81,13 @@ BankAi uses a decoupled **Worker-Observer** architecture for document processing
 *   **Frontend UI:** `http://localhost:3000`
 *   **API Documentation:** `http://localhost:8000/docs`
 *   **MinIO Console:** `http://localhost:9001`
+
+### Current Production Access
+
+*   **Public UI:** `https://ai.silverlining.com.np`
+*   **Fast model:** clean Gemma 4 4B served by vLLM on GPU 0.
+*   **Deep model:** clean Gemma 4 26B 4-bit served by vLLM on GPU 1.
+*   **Queueing:** Redis limits concurrent requests per model and per user.
 
 ---
 

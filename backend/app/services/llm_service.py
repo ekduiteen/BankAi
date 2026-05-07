@@ -9,6 +9,7 @@ requires only .env changes.
 """
 import httpx
 from ..core.config import settings
+from .llm_gateway import reserve_model
 
 
 # ── Shared HTTP helper ────────────────────────────────────────────────────────
@@ -80,35 +81,56 @@ def call_vision_llm(prompt: str, image_b64: str) -> str:
 
 # ── Async (request-path handlers) ────────────────────────────────────────────
 
-async def async_call_llm_a(prompt: str, system: str | None = None) -> str:
-    url = f"{settings.LLM_A_API_BASE}/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {settings.LLM_A_API_KEY}"}
+async def async_call_llm_a(
+    prompt: str,
+    system: str | None = None,
+    user_id: int | None = None,
+    role: str | None = None,
+) -> str:
     try:
-        async with httpx.AsyncClient() as client:
-            r = await client.post(url, json=_vllm_payload(settings.LLM_A_MODEL, prompt, system),
-                                  headers=headers, timeout=300.0)
-            r.raise_for_status()
-            return _parse_response(r.json())
+        async with reserve_model(user_id=user_id or 0, role=role, model_name=settings.LLM_A_MODEL) as lease:
+            profile = lease.profile
+            url = f"{profile.api_base}/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {profile.api_key}"}
+            payload = _vllm_payload(profile.model, prompt, system)
+            payload["max_tokens"] = profile.max_tokens
+            async with httpx.AsyncClient() as client:
+                r = await client.post(url, json=payload, headers=headers, timeout=profile.timeout_seconds)
+                r.raise_for_status()
+                return _parse_response(r.json())
     except Exception as e:
         return f"LLM-A unavailable. ({e})"
 
 
-async def async_call_llm_b(prompt: str, system: str | None = None) -> str:
-    url = f"{settings.LLM_B_API_BASE}/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {settings.LLM_B_API_KEY}"}
+async def async_call_llm_b(
+    prompt: str,
+    system: str | None = None,
+    user_id: int | None = None,
+    role: str | None = None,
+) -> str:
     try:
-        async with httpx.AsyncClient() as client:
-            r = await client.post(url, json=_vllm_payload(settings.LLM_B_MODEL, prompt, system),
-                                  headers=headers, timeout=300.0)
-            r.raise_for_status()
-            return _parse_response(r.json())
+        async with reserve_model(user_id=user_id or 0, role=role, model_name=settings.LLM_B_MODEL) as lease:
+            profile = lease.profile
+            url = f"{profile.api_base}/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {profile.api_key}"}
+            payload = _vllm_payload(profile.model, prompt, system)
+            payload["max_tokens"] = profile.max_tokens
+            async with httpx.AsyncClient() as client:
+                r = await client.post(url, json=payload, headers=headers, timeout=profile.timeout_seconds)
+                r.raise_for_status()
+                return _parse_response(r.json())
     except Exception as e:
         return f"LLM-B unavailable. ({e})"
 
 
-async def async_call_llm(prompt: str, system: str | None = None) -> str:
+async def async_call_llm(
+    prompt: str,
+    system: str | None = None,
+    user_id: int | None = None,
+    role: str | None = None,
+) -> str:
     """Default async — routes to LLM A. Kept for backward compat."""
-    return await async_call_llm_a(prompt, system)
+    return await async_call_llm_a(prompt, system, user_id=user_id, role=role)
 
 
 async def async_call_vision_llm(prompt: str, image_b64: str) -> str:

@@ -150,6 +150,7 @@ async def async_generate_rag_response(
     language: str = "en",
     active_document_ids: list[int] | None = None,
     session_id: int | None = None,
+    user_id: int | None = None,
 ):
     try:
         query_vector = generate_embeddings([question])[0]
@@ -167,4 +168,4 @@ async def async_generate_rag_response(
     sys_identity = get_system_identity(language)
     context = "\n\n---\n\n".join(r.payload.get("text", "") for r in filtered)
     prompt = RAG_PROMPT_TEMPLATE.format(system=sys_identity, context=context, question=question)
-    return await async_call_llm(prompt), _build_sources(filtered, db)
+    return await async_call_llm(prompt, user_id=user_id, role=user_role), _build_sources(filtered, db)

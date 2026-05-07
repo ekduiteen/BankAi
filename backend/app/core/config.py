@@ -28,7 +28,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
 
-    ALLOWED_ORIGINS_RAW: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:80,http://localhost")
+    ALLOWED_ORIGINS_RAW: str = os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://ai.silverlining.com.np,https://202.51.2.50,http://202.51.2.50,http://localhost:3000,http://localhost:80,http://localhost",
+    )
+    COOKIE_SECURE: bool = os.getenv("COOKIE_SECURE", "false").lower() == "true"
 
     @property
     def ALLOWED_ORIGINS(self) -> list[str]:
@@ -43,6 +47,7 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: str = os.getenv("MINIO_ACCESS_KEY", "admin")
     MINIO_SECRET_KEY: str = os.getenv("MINIO_SECRET_KEY", "password")
     MINIO_BUCKET: str = os.getenv("MINIO_BUCKET", "bank-documents")
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "lipicore_uploads"))
     CHAT_UPLOAD_DIR: str = os.getenv("CHAT_UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "lipicore_chat_uploads"))
@@ -62,6 +67,14 @@ class Settings(BaseSettings):
     LLM_C_API_BASE: str = os.getenv("LLM_C_API_BASE", "http://localhost:8003")
     LLM_C_MODEL: str = os.getenv("LLM_C_MODEL", "gemma-4-26b-4bit")
     LLM_C_API_KEY: str = os.getenv("LLM_C_API_KEY", "no-key")
+
+    LLM_A_MAX_CONCURRENCY: int = int(os.getenv("LLM_A_MAX_CONCURRENCY", "12"))
+    LLM_C_MAX_CONCURRENCY: int = int(os.getenv("LLM_C_MAX_CONCURRENCY", "4"))
+    LLM_USER_MAX_CONCURRENCY: int = int(os.getenv("LLM_USER_MAX_CONCURRENCY", "1"))
+    LLM_ADMIN_MAX_CONCURRENCY: int = int(os.getenv("LLM_ADMIN_MAX_CONCURRENCY", "2"))
+    LLM_QUEUE_TIMEOUT_SECONDS: float = float(os.getenv("LLM_QUEUE_TIMEOUT_SECONDS", "120"))
+    LLM_FAST_MAX_TOKENS: int = int(os.getenv("LLM_FAST_MAX_TOKENS", "512"))
+    LLM_DEEP_MAX_TOKENS: int = int(os.getenv("LLM_DEEP_MAX_TOKENS", "768"))
 
     # LLM_D (vllm-d): Qwen3.6 27B for report generation
     LLM_D_API_BASE: str = os.getenv("LLM_D_API_BASE", "http://localhost:8004")

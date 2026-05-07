@@ -104,7 +104,12 @@ async def run_task(
     )
 
     call_fn = async_call_llm_b if template.llm == "b" else async_call_llm_a
-    result = await call_fn(user_prompt, system=template.system_prompt)
+    result = await call_fn(
+        user_prompt,
+        system=template.system_prompt,
+        user_id=current_user.id,
+        role=current_user.role,
+    )
 
     log_audit_event(
         db=db,

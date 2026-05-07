@@ -30,6 +30,7 @@ from ..services.rag_service import generate_rag_response, async_generate_rag_res
 from ..services.audit_service import log_audit_event
 from ..services.guardrail_service import detect_prompt_injection, detect_and_mask_pii
 from ..services.query_rewrite_service import rewrite_query_for_retrieval
+from ..services.llm_gateway import model_status, reserve_model, resolve_model_profile
 from ..core.config import settings
 
 
@@ -39,9 +40,8 @@ def _resolve_model_endpoint(model_name: Optional[str]) -> tuple[str, str, str]:
     Returns default (LLM_A) if model_name is None or unknown.
     """
     model_map = {
-        'lipi-llm': (settings.LLM_A_API_BASE, settings.LLM_A_MODEL, settings.LLM_A_API_KEY),
+        'gemma-4': (settings.LLM_A_API_BASE, settings.LLM_A_MODEL, settings.LLM_A_API_KEY),
         'gemma-4-26b-4bit': (settings.LLM_C_API_BASE, settings.LLM_C_MODEL, settings.LLM_C_API_KEY),
-        'qwen3.6-27b-4bit': (settings.LLM_D_API_BASE, settings.LLM_D_MODEL, settings.LLM_D_API_KEY),
     }
     if model_name in model_map:
         return model_map[model_name]
@@ -65,6 +65,11 @@ CHAT_UPLOAD_DIR = settings.CHAT_UPLOAD_DIR
 def ensure_chat_upload_dir() -> None:
     import os
     os.makedirs(CHAT_UPLOAD_DIR, exist_ok=True)
+
+
+@router.get("/models/status")
+async def read_model_status(current_user: User = Depends(get_current_user)) -> dict:
+    return await model_status()
 
 
 def _session_active_document_ids(session: ChatSession, requested_ids: Optional[List[int]] = None) -> list[int]:
@@ -244,6 +249,7 @@ async def create_chat_message(
             chat_request.language,
             active_document_ids=active_doc_ids,
             session_id=session_id,
+            user_id=current_user.id,
         )
     
     # 4. Save AI message
@@ -422,53 +428,70 @@ async def stream_chat_message(
                 "content": msg.content,
             })
 
-        # Resolve model endpoint based on user selection
-        api_base, model_name, api_key = _resolve_model_endpoint(chat_request.model_override)
+        selected_profile = resolve_model_profile(chat_request.model_override)
+        status = await model_status()
+        selected_status = status.get(selected_profile.key, {})
+        if selected_status.get("active", 0) >= selected_status.get("limit", 1):
+            yield f"data: {json.dumps({'type': 'status', 'message': 'All model workers are busy. Your request is queued.'})}\n\n"
 
         full_response = ""
-        url = f"{api_base}/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {api_key}"}
-        payload = {
-            "model": model_name,
-            "messages": vllm_messages,
-            "stream": True,
-            "temperature": 0.7,
-            "top_p": 0.9,
-        }
-
-        logger.info(f"[STREAM] About to call vLLM at {url} with model={model_name}")
         try:
-            logger.info("[STREAM] Creating httpx client")
-            async with httpx.AsyncClient(timeout=300.0) as client:
-                logger.info("[STREAM] Streaming from vLLM...")
-                async with client.stream("POST", url, json=payload, headers=headers) as response:
-                    logger.info(f"[STREAM] Got vLLM response: {response.status_code}")
-                    if response.status_code != 200:
-                        body = await response.aread()
-                        logger.error(f"[STREAM] vLLM error body: {body[:500]}")
-                        yield f"data: {json.dumps({'token': f'AI engine returned error {response.status_code}.', 'done': True})}\n\n"
-                        return
-                    logger.info("[STREAM] Starting to read vLLM lines")
-                    token_count = 0
-                    async for line in response.aiter_lines():
-                        if not line.startswith("data: "):
-                            continue
-                        chunk = line[6:]
-                        if chunk == "[DONE]":
-                            logger.info("[STREAM] Got [DONE]")
-                            break
-                        try:
-                            data = json.loads(chunk)
-                            if data.get("choices"):
-                                delta = data["choices"][0].get("delta", {})
-                                token = delta.get("content", "")
-                                if token:
-                                    token_count += 1
-                                    full_response += token
-                                    logger.debug(f"[STREAM] Token {token_count}: {token[:20]}")
-                                    yield f"data: {json.dumps({'token': token})}\n\n"
-                        except json.JSONDecodeError:
-                            continue
+            async with reserve_model(
+                user_id=current_user.id,
+                role=current_user.role,
+                model_name=chat_request.model_override,
+            ) as lease:
+                profile = lease.profile
+                if lease.queued_ahead > 0:
+                    yield f"data: {json.dumps({'type': 'status', 'message': f'Queued behind {lease.queued_ahead} request(s).'})}\n\n"
+
+                url = f"{profile.api_base}/v1/chat/completions"
+                headers = {"Authorization": f"Bearer {profile.api_key}"}
+                payload = {
+                    "model": profile.model,
+                    "messages": vllm_messages,
+                    "stream": True,
+                    "temperature": 0.7,
+                    "top_p": 0.9,
+                    "max_tokens": profile.max_tokens,
+                }
+
+                logger.info(f"[STREAM] About to call vLLM at {url} with model={profile.model}")
+                logger.info("[STREAM] Creating httpx client")
+                async with httpx.AsyncClient(timeout=profile.timeout_seconds) as client:
+                    logger.info("[STREAM] Streaming from vLLM...")
+                    async with client.stream("POST", url, json=payload, headers=headers) as response:
+                        logger.info(f"[STREAM] Got vLLM response: {response.status_code}")
+                        if response.status_code != 200:
+                            body = await response.aread()
+                            logger.error(f"[STREAM] vLLM error body: {body[:500]}")
+                            yield f"data: {json.dumps({'token': f'AI engine returned error {response.status_code}.', 'done': True})}\n\n"
+                            return
+                        logger.info("[STREAM] Starting to read vLLM lines")
+                        token_count = 0
+                        async for line in response.aiter_lines():
+                            if not line.startswith("data: "):
+                                continue
+                            chunk = line[6:]
+                            if chunk == "[DONE]":
+                                logger.info("[STREAM] Got [DONE]")
+                                break
+                            try:
+                                data = json.loads(chunk)
+                                if data.get("choices"):
+                                    delta = data["choices"][0].get("delta", {})
+                                    token = delta.get("content", "")
+                                    if token:
+                                        token_count += 1
+                                        full_response += token
+                                        logger.debug(f"[STREAM] Token {token_count}: {token[:20]}")
+                                        yield f"data: {json.dumps({'token': token})}\n\n"
+                            except json.JSONDecodeError:
+                                continue
+        except asyncio.TimeoutError:
+            logger.error("[STREAM] Timed out waiting for model capacity")
+            yield f"data: {json.dumps({'token': 'AI engine is busy. Please retry shortly.', 'done': True})}\n\n"
+            return
         except Exception as e:
             logger.error(f"[STREAM] Streaming error: {e}")
             yield f"data: {json.dumps({'token': 'Error connecting to AI engine.', 'done': True})}\n\n"
@@ -695,40 +718,54 @@ async def stream_chat_with_file(
 
     async def event_stream():
         full_response = ""
-        url = f"{settings.LLM_A_API_BASE}/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {settings.LLM_A_API_KEY}"}
-        payload = {
-            "model": settings.LLM_A_MODEL,
-            "messages": vllm_messages,
-            "stream": True,
-            "temperature": 0.7,
-        }
 
         yield f"data: {json.dumps({'type': 'status', 'message': 'Analyzing uploaded file...'})}\n\n"
 
         try:
-            async with httpx.AsyncClient(timeout=300.0) as client:
-                async with client.stream("POST", url, json=payload, headers=headers) as response:
-                    if response.status_code != 200:
-                        body = await response.aread()
-                        logger.error(f"[STREAM-FILE] vLLM error {response.status_code}: {body[:300]}")
-                        yield f"data: {json.dumps({'token': 'Error connecting to AI engine.'})}\n\n"
-                    else:
-                        async for line in response.aiter_lines():
-                            if not line.startswith("data: "):
-                                continue
-                            chunk = line[6:]
-                            if chunk == "[DONE]":
-                                break
-                            try:
-                                data = json.loads(chunk)
-                                if data.get("choices"):
-                                    token = data["choices"][0].get("delta", {}).get("content", "")
-                                    if token:
-                                        full_response += token
-                                        yield f"data: {json.dumps({'token': token})}\n\n"
-                            except json.JSONDecodeError:
-                                continue
+            async with reserve_model(
+                user_id=current_user.id,
+                role=current_user.role,
+                model_name=None,
+            ) as lease:
+                profile = lease.profile
+                if lease.queued_ahead > 0:
+                    yield f"data: {json.dumps({'type': 'status', 'message': f'Queued behind {lease.queued_ahead} request(s).'})}\n\n"
+
+                url = f"{profile.api_base}/v1/chat/completions"
+                headers = {"Authorization": f"Bearer {profile.api_key}"}
+                payload = {
+                    "model": profile.model,
+                    "messages": vllm_messages,
+                    "stream": True,
+                    "temperature": 0.7,
+                    "max_tokens": profile.max_tokens,
+                }
+
+                async with httpx.AsyncClient(timeout=profile.timeout_seconds) as client:
+                    async with client.stream("POST", url, json=payload, headers=headers) as response:
+                        if response.status_code != 200:
+                            body = await response.aread()
+                            logger.error(f"[STREAM-FILE] vLLM error {response.status_code}: {body[:300]}")
+                            yield f"data: {json.dumps({'token': 'Error connecting to AI engine.'})}\n\n"
+                        else:
+                            async for line in response.aiter_lines():
+                                if not line.startswith("data: "):
+                                    continue
+                                chunk = line[6:]
+                                if chunk == "[DONE]":
+                                    break
+                                try:
+                                    data = json.loads(chunk)
+                                    if data.get("choices"):
+                                        token = data["choices"][0].get("delta", {}).get("content", "")
+                                        if token:
+                                            full_response += token
+                                            yield f"data: {json.dumps({'token': token})}\n\n"
+                                except json.JSONDecodeError:
+                                    continue
+        except asyncio.TimeoutError:
+            logger.error("[STREAM-FILE] Timed out waiting for model capacity")
+            yield f"data: {json.dumps({'token': 'AI engine is busy. Please retry shortly.'})}\n\n"
         except Exception as e:
             logger.error(f"[STREAM-FILE] Error: {e}")
             yield f"data: {json.dumps({'token': 'Error connecting to AI engine.'})}\n\n"

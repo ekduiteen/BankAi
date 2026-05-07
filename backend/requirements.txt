@@ -26,3 +26,4 @@ python-pptx
 slowapi
 limits
 reportlab
+redis
