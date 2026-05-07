@@ -1,5 +1,6 @@
 import os
 import uuid
+import re
 from pypdf import PdfReader
 from docx import Document as DocxDocument
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -9,6 +10,22 @@ from sqlmodel import Session
 from ..models.document import Document, DocumentChunk
 from .embedding_service import generate_embeddings
 from .qdrant_service import upload_points
+
+
+SECTION_RE = re.compile(
+    r"\b(?:section|sec\.?|clause|article|chapter|part)\s+([0-9]+(?:\.[0-9]+)*)\b|"
+    r"\b(?:दफा|परिच्छेद|बुँदा)\s*([०-९0-9]+(?:[.\-][०-९0-9]+)*)",
+    re.IGNORECASE,
+)
+
+
+def _extract_section_label(text: str | None) -> str | None:
+    if not text:
+        return None
+    match = SECTION_RE.search(text[:1200])
+    if not match:
+        return None
+    return " ".join(match.group(0).strip().split())[:80]
 
 
 def extract_text(file_path: str, file_type: str) -> str:
@@ -186,6 +203,7 @@ def process_document(document_id: int):
             chunk_records = []
             for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
                 point_id = str(uuid.uuid4())
+                section_label = _extract_section_label(chunk_text)
                 chunk_records.append(DocumentChunk(
                     bank_id=doc.bank_id,
                     document_id=doc.id,
@@ -201,6 +219,7 @@ def process_document(document_id: int):
                         "document_id": doc.id,
                         "chunk_index": i,
                         "text": chunk_text,
+                        "section_label": section_label,
                         "document_scope": doc.document_scope,
                         "session_id": doc.session_id,
                     }

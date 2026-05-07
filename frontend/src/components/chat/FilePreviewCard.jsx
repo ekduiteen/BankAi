@@ -34,28 +34,6 @@ export default function FilePreviewCard({ file, onRemove }) {
     if (file.processing_message)          setMessage(file.processing_message);
   }, [file.status, file.processing_progress, file.processing_message]);
 
-  useEffect(() => {
-    if (!file.id || String(file.id).startsWith('tmp') || isDone || isFailed) return;
-    const poll = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const r = await fetch(`/api/documents?limit=200`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) return;
-        const docs = await r.json();
-        const doc  = docs.find(d => d.id === file.id);
-        if (doc) {
-          setStatus(doc.status);
-          setProgress(doc.processing_progress ?? 0);
-          setMessage(doc.processing_message || '');
-        }
-      } catch (_) {}
-    };
-    const t = setInterval(poll, 2000);
-    return () => clearInterval(t);
-  }, [file.id, isDone, isFailed]);
-
   return (
     <div className="relative flex items-center p-3 bg-white border border-slate-200 rounded group hover:border-secondary transition-colors" data-testid="file-preview-card">
       <div className={`w-10 h-10 rounded flex items-center justify-center flex-shrink-0 mr-3 ${typeInfo.bg}`}>

@@ -4,6 +4,7 @@ import os
 import uuid
 import logging
 import asyncio
+import re
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
@@ -134,6 +135,31 @@ def _should_mix_global_knowledge(message: str) -> bool:
         "other documents",
     )
     return any(term in text for term in global_terms)
+
+SECTION_RE = re.compile(
+    r"\b(?:section|sec\.?|clause|article|chapter|part)\s+([0-9]+(?:\.[0-9]+)*)\b|"
+    r"\b(?:दफा|परिच्छेद|बुँदा)\s*([०-९0-9]+(?:[.\-][०-९0-9]+)*)",
+    re.IGNORECASE,
+)
+
+
+def _extract_section_label(text: str | None) -> str | None:
+    if not text:
+        return None
+    match = SECTION_RE.search(text[:1200])
+    if not match:
+        return None
+    return " ".join(match.group(0).strip().split())[:80]
+
+
+def _source_prefix(doc, payload: dict) -> str:
+    parts = [f"Source: {(doc.title or doc.file_name) if doc else 'Document'}"]
+    section = payload.get("section_label") or payload.get("section_number") or _extract_section_label(payload.get("text"))
+    if section:
+        parts.append(f"Section: {section}")
+    if payload.get("page_number"):
+        parts.append(f"Page: {payload.get('page_number')}")
+    return "[" + "; ".join(parts) + "]"
 
 @router.post("/sessions", response_model=ChatSessionResponse)
 def create_chat_session(
@@ -414,7 +440,11 @@ async def stream_chat_message(
                     filtered = [r for r in results if r.payload and r.payload.get("document_id") in allowed_docs]
 
                     if filtered:
-                        context = "\n\n---\n\n".join(r.payload.get("text", "") for r in filtered)
+                        context_blocks = []
+                        for r in filtered:
+                            doc = db.get(Document, r.payload.get("document_id"))
+                            context_blocks.append(f"{_source_prefix(doc, r.payload)}\n{r.payload.get('text', '')}")
+                        context = "\n\n---\n\n".join(context_blocks)
                         sys_identity += (
                             f"\n\n--- DOCUMENT CONTEXT ---\n"
                             f"Use the following context from approved documents to answer the user's question.\n\n"
@@ -425,12 +455,22 @@ async def stream_chat_message(
                             doc_id = r.payload.get("document_id")
                             if doc_id and doc_id not in seen_src:
                                 doc = db.get(Document, doc_id)
+                                section_label = (
+                                    r.payload.get("section_label")
+                                    or r.payload.get("section_number")
+                                    or _extract_section_label(r.payload.get("text"))
+                                )
                                 sources_list.append({
                                     "document_id":    doc_id,
                                     "document_title": (doc.title or doc.file_name) if doc else "Database Source",
                                     "title":          (doc.title or doc.file_name) if doc else "Database Source",
+                                    "document_type":  doc.document_type if doc else None,
+                                    "department":     doc.department if doc else None,
                                     "snippet":        r.payload.get("text", "")[:120] + "...",
                                     "page_number":    r.payload.get("page_number"),
+                                    "section_label":  section_label,
+                                    "section_number": section_label,
+                                    "chunk_index":    r.payload.get("chunk_index"),
                                 })
                                 seen_src.add(doc_id)
             except Exception as e:

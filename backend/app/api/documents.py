@@ -96,6 +96,7 @@ def read_documents(
     db: Session = Depends(get_session),
     skip: int = 0,
     limit: int = 100,
+    ids: Optional[str] = None,
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
@@ -103,6 +104,15 @@ def read_documents(
     Further filtering by department/access_level can be added here.
     """
     query = select(Document).where(Document.bank_id == current_user.bank_id)
+    if ids:
+        parsed_ids = []
+        for raw_id in ids.split(","):
+            try:
+                parsed_ids.append(int(raw_id.strip()))
+            except ValueError:
+                continue
+        if parsed_ids:
+            query = query.where(Document.id.in_(parsed_ids))
     
     if current_user.role == "staff_user":
         # Staff can see approved library docs plus their own chat-session uploads

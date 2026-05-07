@@ -2,8 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useOutletContext, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import FilePreviewCard from '../components/chat/FilePreviewCard';
-import ModelModeSelector, { MODEL_MODES } from '../components/lipicore/ModelModeSelector';
-import { suggestModelMode } from '../utils/modelRoutingPreview';
 import useDropZone from '../hooks/useDropZone';
 
 const EXPORT_FORMATS = [
@@ -68,6 +66,12 @@ function ChatExportButton({ content }) {
 
 const FILE_ACCEPT = '.pdf,.docx,.txt,.xlsx,.xls,.pptx,.ppt,.jpg,.jpeg,.png';
 
+const MODEL_OPTIONS = [
+  { value: null, label: 'Auto', icon: 'auto_awesome', description: 'Route to the best Gemma tier' },
+  { value: 'gemma-4', label: 'Fast', icon: 'bolt', description: 'Gemma 4 4B' },
+  { value: 'gemma-4-26b-4bit', label: 'Analyst', icon: 'psychology', description: 'Gemma 4 26B' },
+];
+
 // ── Markdown renderer ─────────────────────────────────────────────────────────
 function inlineFormat(text) {
   if (!text) return null;
@@ -118,6 +122,15 @@ function formatMessageTime(value) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+function documentLabel(doc) {
+  return doc?.name || doc?.file_name || doc?.title || 'Document';
+}
+
+function activeDocumentId(doc) {
+  const id = Number(doc?.document_id || doc?.id);
+  return Number.isInteger(id) ? id : null;
+}
+
 function welcomeMsg() {
   return {
     id: 'welcome', role: 'assistant',
@@ -146,8 +159,6 @@ export default function ChatAssistant() {
   const [editText, setEditText]               = useState('');
   const [userScrolled, setUserScrolled]       = useState(false);
   const [abortCtrl, setAbortCtrl]             = useState(null);
-  const [modelMode, setModelMode]             = useState('auto');
-  const [routingHint, setRoutingHint]         = useState(null);
   const [selectedLLM, setSelectedLLM]         = useState(null);
 
   const endRef      = useRef(null);
@@ -155,13 +166,6 @@ export default function ChatAssistant() {
   const fileRef     = useRef(null);
   const textareaRef = useRef(null);
   const streamingTextRef = useRef('');
-
-  // Update routing hint whenever the user types and mode is 'auto'
-  useEffect(() => {
-    if (modelMode !== 'auto') { setRoutingHint(null); return; }
-    const { mode, reason } = suggestModelMode(input);
-    setRoutingHint(mode !== 'auto' && mode !== 'fast' ? reason : null);
-  }, [input, modelMode]);
 
   const scrollBottom = useCallback(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -274,8 +278,7 @@ export default function ChatAssistant() {
         await loadSession(parseInt(sid));
         if (prompt) setInput(decodeURIComponent(prompt));
       } else {
-        if (r.data.length > 0) await loadSession(r.data[0].id);
-        else await createNewSession();
+        await createNewSession();
       }
     };
     init();
@@ -329,33 +332,10 @@ export default function ChatAssistant() {
     }
   }, [sessionId, navigate]);
 
-  // ── Handle file input ────────────────────────────────────────────────────
-  const handleFileInput = useCallback(async (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Auto-switch to Auto mode if image uploaded with a specific model selected
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) && selectedLLM) {
-        setSelectedLLM(null);
-      }
-      await handleFileSelect(file);
-    }
-    if (fileRef.current) fileRef.current.value = '';
-  }, [handleFileSelect, selectedLLM]);
-
   // ── Handle drop zone files (parallel uploads) ────────────────────────────
   const handleDropZoneFiles = useCallback(async (files) => {
     const fileArray = Array.from(files);
     if (fileArray.length === 0) return;
-
-    // Auto-switch to Auto mode if image uploaded with a specific model selected
-    const hasImage = fileArray.some(f => {
-      const ext = f.name.split('.').pop().toLowerCase();
-      return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-    });
-    if (hasImage && selectedLLM) {
-      setSelectedLLM(null);
-    }
 
     // Create session once if needed
     let uploadSessionId = sessionId;
@@ -377,7 +357,16 @@ export default function ChatAssistant() {
       const batch = fileArray.slice(i, i + CONCURRENCY);
       await Promise.all(batch.map(file => handleFileSelect(file, uploadSessionId)));
     }
-  }, [sessionId, handleFileSelect, navigate, selectedLLM]);
+  }, [sessionId, handleFileSelect, navigate]);
+
+  // ── Handle file input ────────────────────────────────────────────────────
+  const handleFileInput = useCallback(async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      await handleDropZoneFiles(files);
+    }
+    if (fileRef.current) fileRef.current.value = '';
+  }, [handleDropZoneFiles]);
 
   const { isDragging, dropHandlers } = useDropZone(handleDropZoneFiles);
 
@@ -395,6 +384,13 @@ export default function ChatAssistant() {
     const readyDocs = activeDocuments.filter(
       d => ['ready','approved','indexed'].includes(d.status) && !String(d.id).startsWith('tmp')
     );
+    const usedDocs = readyDocs.map(d => ({
+      id: activeDocumentId(d),
+      name: documentLabel(d),
+      file_name: d.file_name,
+      document_type: d.document_type,
+      department: d.department,
+    })).filter(d => d.id);
     if (busy.length && readyDocs.length === 0) {
       setMessages(prev => [...prev, {
         id: Date.now(), role: 'assistant', created_at: new Date().toISOString(),
@@ -404,8 +400,17 @@ export default function ChatAssistant() {
       return;
     }
 
-    setMessages(prev => [...prev, { id: Date.now(), role: 'user', content, sources: [], suggestions: [], created_at: new Date().toISOString() }]);
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      role: 'user',
+      content,
+      sources: [],
+      suggestions: [],
+      usedDocuments: usedDocs,
+      created_at: new Date().toISOString(),
+    }]);
     setInput('');
+    setActiveDocuments(busy);
     if (textareaRef.current) { textareaRef.current.style.height = 'auto'; }
     setIsLoading(true);
     setStreamingText('');
@@ -417,13 +422,6 @@ export default function ChatAssistant() {
     setAbortCtrl(ctrl);
 
     try {
-      // Resolve which model to use
-      const resolvedMode = modelMode === 'auto'
-        ? suggestModelMode(content).mode
-        : modelMode;
-      const modeConfig = MODEL_MODES.find(m => m.id === resolvedMode);
-      const modelOverride = modeConfig?.model || null;
-
       const resp = await fetch(`/api/chat/sessions/${sessionId}/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -431,11 +429,8 @@ export default function ChatAssistant() {
         body: JSON.stringify({
           message: content,
           language,
-          active_document_ids: readyDocs
-            .map(d => Number(d.document_id || d.id))
-            .filter(id => Number.isInteger(id)),
+          active_document_ids: usedDocs.map(d => d.id),
           ...(selectedLLM ? { model_override: selectedLLM } : {}),
-          ...(modelOverride && !selectedLLM ? { model_override: modelOverride } : {}),
         }),
         signal: ctrl.signal,
       });
@@ -517,6 +512,8 @@ export default function ChatAssistant() {
     await handleSend(null, editText.trim());
   };
 
+  const selectedModelOption = MODEL_OPTIONS.find(option => option.value === selectedLLM) || MODEL_OPTIONS[0];
+
   return (
     <div className="flex h-full overflow-hidden">
       {/* Main chat */}
@@ -533,40 +530,25 @@ export default function ChatAssistant() {
             </span>
           </div>
           <div className="flex items-center gap-2 lg:gap-3 flex-wrap justify-end">
-            <ModelModeSelector value={modelMode} onChange={setModelMode} compact />
             {/* LLM Model Selector */}
-            <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
+            <div className="flex items-center gap-1">
               <div className="relative group">
-                <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors">
-                  <span className="material-symbols-outlined text-[14px]">smart_toy</span>
-                  <span className="max-w-[120px] truncate">{selectedLLM ? 'Manual' : 'Model'}</span>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded border border-slate-200 transition-colors">
+                  <span className="material-symbols-outlined text-[14px]">{selectedModelOption.icon}</span>
+                  <span className="max-w-[150px] truncate">{selectedModelOption.label}</span>
                   <span className="material-symbols-outlined text-[12px]">expand_more</span>
                 </button>
                 <div className="absolute right-0 top-8 w-64 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 hidden group-hover:block">
-                  <button onClick={() => setSelectedLLM(null)}
-                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${!selectedLLM ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span className="material-symbols-outlined text-[14px] mt-0.5">auto_awesome</span>
-                    <div className="flex-1 text-left">
-                      <div className="font-semibold">Auto (Default)</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Smart routing for any task</div>
-                    </div>
-                  </button>
-                  <button onClick={() => setSelectedLLM('gemma-4')}
-                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'gemma-4' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span className="material-symbols-outlined text-[14px] mt-0.5">bolt</span>
-                    <div className="flex-1 text-left">
-                      <div className="font-semibold">Gemma 4 4B (Fast)</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Fast answers on GPU 0</div>
-                    </div>
-                  </button>
-                  <button onClick={() => setSelectedLLM('gemma-4-26b-4bit')}
-                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'gemma-4-26b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span className="material-symbols-outlined text-[14px] mt-0.5">psychology</span>
-                    <div className="flex-1 text-left">
-                      <div className="font-semibold">Gemma 4 26B (Analyst)</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Deep reasoning on GPU 1</div>
-                    </div>
-                  </button>
+                  {MODEL_OPTIONS.map(option => (
+                    <button key={option.label} onClick={() => setSelectedLLM(option.value)}
+                      className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === option.value ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                      <span className="material-symbols-outlined text-[14px] mt-0.5">{option.icon}</span>
+                      <div className="flex-1 text-left">
+                        <div className="font-semibold">{option.label}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">{option.description}</div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -673,15 +655,6 @@ export default function ChatAssistant() {
               </div>
             )}
 
-            {routingHint && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-                <span className="material-symbols-outlined text-[14px]">tips_and_updates</span>
-                {routingHint}
-                <button onClick={() => { const { mode } = suggestModelMode(input); setModelMode(mode); setRoutingHint(null); }}
-                  className="ml-auto font-semibold underline hover:no-underline">Switch</button>
-              </div>
-            )}
-
             <div className="relative">
               <button type="button" onClick={() => {
                 fileRef.current?.click();
@@ -690,7 +663,7 @@ export default function ChatAssistant() {
                 disabled={isLoading}>
                 <span className="material-symbols-outlined text-[22px]">attachment</span>
               </button>
-              <input type="file" ref={fileRef} onChange={handleFileInput} className="hidden" accept={FILE_ACCEPT} data-testid="file-upload" />
+              <input type="file" ref={fileRef} onChange={handleFileInput} className="hidden" accept={FILE_ACCEPT} data-testid="file-upload" multiple />
               <textarea
                 data-testid="chat-input"
                 ref={textareaRef}
@@ -810,6 +783,18 @@ function MsgBubble({ msg, idx, isLast, isLoading, editingId, editText, setEditTe
               : <div className="text-body-sm text-on-surface" data-testid="message-content">{renderMarkdown(msg.content)}</div>
             }
 
+            {isUser && msg.usedDocuments && msg.usedDocuments.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-3">
+                {msg.usedDocuments.map((doc) => (
+                  <span key={doc.id}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded text-[11px] font-medium text-slate-600">
+                    <span className="material-symbols-outlined text-[13px] text-secondary">attach_file</span>
+                    {doc.name}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Source chips */}
             {!isUser && msg.sources && msg.sources.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
@@ -818,7 +803,13 @@ function MsgBubble({ msg, idx, isLast, isLoading, editingId, editText, setEditTe
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded text-[11px] font-medium text-slate-600">
                     <span className="material-symbols-outlined text-[13px] text-secondary">description</span>
                     {s.document_title || s.title || 'Source'}
+                    {(s.section_label || s.section_number) && (
+                      <span className="text-slate-500">· {s.section_label || s.section_number}</span>
+                    )}
                     {s.page_number && <span className="text-slate-400">[p.{s.page_number}]</span>}
+                    {!s.page_number && !s.section_label && !s.section_number && Number.isInteger(s.chunk_index) && (
+                      <span className="text-slate-400">[chunk {s.chunk_index + 1}]</span>
+                    )}
                   </span>
                 ))}
               </div>
