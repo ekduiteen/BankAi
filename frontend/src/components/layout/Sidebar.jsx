@@ -15,7 +15,7 @@ const NAV_SECTIONS = [
     label: 'KNOWLEDGE',
     items: [
       { icon: 'folder_managed', label: 'Document Library',    to: '/documents',          permission: PERMISSIONS.VIEW_DOCUMENTS },
-      { icon: 'shield_alert',   label: 'Compliance Monitor',  to: '/regulatory',         permission: PERMISSIONS.VIEW_REGULATORY_LIBRARY },
+      { icon: 'gpp_maybe',      label: 'Compliance Monitor',  to: '/regulatory',         permission: PERMISSIONS.VIEW_REGULATORY_LIBRARY },
     ],
   },
   {
@@ -58,12 +58,16 @@ function NavItem({ icon, label, to }) {
   );
 }
 
-export default function Sidebar({ onUpload }) {
+export default function Sidebar({ onUpload, open = false, onClose }) {
   const userRole = getCurrentUserRole();
   const user = getCurrentUser();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 flex flex-col py-4 px-3 bg-slate-50 border-r border-slate-200 z-40">
+    <aside
+      className={`fixed left-0 top-0 h-screen w-64 flex flex-col py-4 px-3 bg-slate-50 border-r border-slate-200 z-40 transition-transform duration-200 lg:translate-x-0 ${
+        open ? 'translate-x-0 shadow-panel' : '-translate-x-full'
+      }`}
+    >
       {/* Brand */}
       <div className="px-3 py-3 mb-4 flex items-center gap-3">
         <div className="h-9 w-9 bg-primary flex items-center justify-center rounded-lg flex-shrink-0">
@@ -75,6 +79,14 @@ export default function Sidebar({ onUpload }) {
           <h2 className="text-base font-black text-slate-900 font-public-sans leading-none">LipiCore</h2>
           <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-0.5">Enterprise Server</p>
         </div>
+        <button
+          type="button"
+          aria-label="Close navigation"
+          onClick={onClose}
+          className="ml-auto p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded lg:hidden"
+        >
+          <span className="material-symbols-outlined text-[18px]">close</span>
+        </button>
       </div>
 
       {/* Upload CTA */}

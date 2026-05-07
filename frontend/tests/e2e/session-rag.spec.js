@@ -1,11 +1,15 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://127.0.0.1:13000';
-const ADMIN_EMAIL = 'admin@bankai.io';
-const ADMIN_PASSWORD = 'admin123';
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000';
+const ADMIN_EMAIL = process.env.PLAYWRIGHT_ADMIN_EMAIL || 'admin@bankai.io';
+const ADMIN_PASSWORD = process.env.PLAYWRIGHT_ADMIN_PASSWORD;
 
 test.describe('Session-Aware RAG E2E Test', () => {
   test.beforeEach(async ({ page }) => {
+    if (!ADMIN_PASSWORD) {
+      throw new Error('Set PLAYWRIGHT_ADMIN_PASSWORD before running chat e2e tests.');
+    }
+
     // Navigate to login page
     await page.goto(`${BASE_URL}/login`);
 

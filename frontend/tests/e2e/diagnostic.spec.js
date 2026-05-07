@@ -1,10 +1,14 @@
 import { test } from '@playwright/test';
 
-const BASE_URL = 'http://127.0.0.1:13000';
-const ADMIN_EMAIL = 'admin@bankai.io';
-const ADMIN_PASSWORD = 'admin123';
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000';
+const ADMIN_EMAIL = process.env.PLAYWRIGHT_ADMIN_EMAIL || 'admin@bankai.io';
+const ADMIN_PASSWORD = process.env.PLAYWRIGHT_ADMIN_PASSWORD;
 
 test('diagnostic: check page structure', async ({ page }) => {
+  if (!ADMIN_PASSWORD) {
+    throw new Error('Set PLAYWRIGHT_ADMIN_PASSWORD before running chat e2e tests.');
+  }
+
   // Enable verbose logging
   page.on('console', msg => console.log('PAGE LOG:', msg.text()));
   page.on('error', err => console.log('PAGE ERROR:', err));

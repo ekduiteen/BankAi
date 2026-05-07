@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-05-07
+
+- Fixed the chat shell for mobile by replacing the always-pinned sidebar with a responsive drawer and mobile-safe top bar.
+- Updated chat controls to match the deployed clean Gemma 4 vLLM runtime: fast 4B and analyst/report 26B.
+- Allowed ready uploaded documents to remain queryable while unrelated session uploads are still processing.
+- Tightened RAG retrieval so uploaded-document questions do not automatically cite unrelated global documents.
+- Preserved real message timestamps and fixed stopped-generation partial response handling.
+- Replaced overclaimed "Encrypted End-to-End" UI copy with "Encrypted in transit".
+- Switched the frontend icon font to Material Symbols Outlined.
+- Updated Playwright config and chat e2e tests to use env-driven base URL and credentials with installed Chrome.
+
+Verification:
+
+- `npm run lint`
+- `npm run build`
+- `python -m py_compile backend\app\api\chat.py backend\app\services\rag_service.py`
+- Local Chrome smoke screenshots for desktop and mobile chat layouts.
+
 ## 2026-04-28
 
 - Completed BankAi recovery audit and documented current frontend, backend, database, Docker, and test state in `RESUME_REPORT.md`.

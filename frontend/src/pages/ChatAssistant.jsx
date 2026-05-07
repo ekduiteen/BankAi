@@ -112,6 +112,12 @@ function safeJson(str, fallback) {
   try { return JSON.parse(str || 'null') ?? fallback; } catch { return fallback; }
 }
 
+function formatMessageTime(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 function welcomeMsg() {
   return {
     id: 'welcome', role: 'assistant',
@@ -148,6 +154,7 @@ export default function ChatAssistant() {
   const bodyRef     = useRef(null);
   const fileRef     = useRef(null);
   const textareaRef = useRef(null);
+  const streamingTextRef = useRef('');
 
   // Update routing hint whenever the user types and mode is 'auto'
   useEffect(() => {
@@ -182,6 +189,7 @@ export default function ChatAssistant() {
         id: m.id, role: m.role, content: m.content,
         sources: safeJson(m.sources_json, []),
         suggestions: safeJson(m.suggestions_json, []),
+        created_at: m.created_at,
       }));
       if (loaded.length === 0) loaded.unshift(welcomeMsg());
       setMessages(loaded);
@@ -379,24 +387,29 @@ export default function ChatAssistant() {
     const content = (override ?? input).trim();
     if (!content || isLoading || !sessionId) return;
 
-    // Warn if docs still processing
+    // Block only when every attached real document is still processing. Ready
+    // documents remain queryable while other uploads finish in the background.
     const busy = activeDocuments.filter(
       d => !['ready','approved','indexed'].includes(d.status) && !String(d.id).startsWith('tmp')
     );
-    if (busy.length) {
+    const readyDocs = activeDocuments.filter(
+      d => ['ready','approved','indexed'].includes(d.status) && !String(d.id).startsWith('tmp')
+    );
+    if (busy.length && readyDocs.length === 0) {
       setMessages(prev => [...prev, {
-        id: Date.now(), role: 'assistant',
+        id: Date.now(), role: 'assistant', created_at: new Date().toISOString(),
         content: `⚠️ **${busy[0].name || busy[0].file_name}** is still being processed. Please wait for "Ready" status before asking questions about it.`,
         sources: [], suggestions: [],
       }]);
       return;
     }
 
-    setMessages(prev => [...prev, { id: Date.now(), role: 'user', content, sources: [], suggestions: [] }]);
+    setMessages(prev => [...prev, { id: Date.now(), role: 'user', content, sources: [], suggestions: [], created_at: new Date().toISOString() }]);
     setInput('');
     if (textareaRef.current) { textareaRef.current.style.height = 'auto'; }
     setIsLoading(true);
     setStreamingText('');
+    streamingTextRef.current = '';
     setStatusMsg('');
     setUserScrolled(false);
 
@@ -418,7 +431,7 @@ export default function ChatAssistant() {
         body: JSON.stringify({
           message: content,
           language,
-          active_document_ids: activeDocuments
+          active_document_ids: readyDocs
             .map(d => Number(d.document_id || d.id))
             .filter(id => Number.isInteger(id)),
           ...(selectedLLM ? { model_override: selectedLLM } : {}),
@@ -447,7 +460,12 @@ export default function ChatAssistant() {
           try {
             const data = JSON.parse(t.slice(6));
             if (data.type === 'status') { setStatusMsg(data.message || ''); }
-            else if (data.token) { fullText += data.token; setStreamingText(fullText); setStatusMsg(''); }
+            else if (data.token) {
+              fullText += data.token;
+              streamingTextRef.current = fullText;
+              setStreamingText(fullText);
+              setStatusMsg('');
+            }
             if (data.sources)     sources     = data.sources;
             if (data.suggestions) suggestions = data.suggestions;
           } catch (_) {}
@@ -458,24 +476,27 @@ export default function ChatAssistant() {
         id: Date.now() + 1, role: 'assistant',
         content: fullText || 'No response received.',
         sources, suggestions,
+        created_at: new Date().toISOString(),
       }]);
       fetchSessions();
     } catch (err) {
       if (err.name === 'AbortError') {
         setMessages(prev => [...prev, {
           id: Date.now() + 1, role: 'assistant',
-          content: (streamingText || '') + '\n\n*(Generation stopped)*',
+          content: (streamingTextRef.current || '') + '\n\n*(Generation stopped)*',
           sources: [], suggestions: [],
+          created_at: new Date().toISOString(),
         }]);
       } else {
         setMessages(prev => [...prev, {
           id: Date.now() + 1, role: 'assistant',
           content: 'Connection error. Please check the AI engine and try again.',
           sources: [], suggestions: [],
+          created_at: new Date().toISOString(),
         }]);
       }
     } finally {
-      setIsLoading(false); setStreamingText(''); setStatusMsg(''); setAbortCtrl(null);
+      setIsLoading(false); setStreamingText(''); streamingTextRef.current = ''; setStatusMsg(''); setAbortCtrl(null);
     }
   };
 
@@ -502,7 +523,7 @@ export default function ChatAssistant() {
       <div className="flex-1 flex flex-col bg-white border-r border-slate-200 min-w-0">
 
         {/* Sub-header */}
-        <div className="flex items-center justify-between px-6 py-2 border-b border-slate-200 flex-shrink-0 gap-4 flex-wrap">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-b border-slate-200 flex-shrink-0 gap-2 lg:gap-4 flex-wrap">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-7 h-7 bg-primary-container rounded flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-white text-[15px]" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
@@ -511,14 +532,14 @@ export default function ChatAssistant() {
               {sessions.find(s => s.id === sessionId)?.title || 'New Analysis'}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 lg:gap-3 flex-wrap justify-end">
             <ModelModeSelector value={modelMode} onChange={setModelMode} compact />
             {/* LLM Model Selector */}
             <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
               <div className="relative group">
                 <button className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors">
                   <span className="material-symbols-outlined text-[14px]">smart_toy</span>
-                  <span className="max-w-[120px] truncate">{selectedLLM ? selectedLLM.split('-')[0] : 'Model'}</span>
+                  <span className="max-w-[120px] truncate">{selectedLLM ? 'Manual' : 'Model'}</span>
                   <span className="material-symbols-outlined text-[12px]">expand_more</span>
                 </button>
                 <div className="absolute right-0 top-8 w-64 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50 hidden group-hover:block">
@@ -530,28 +551,20 @@ export default function ChatAssistant() {
                       <div className="text-[10px] text-slate-500 mt-0.5">Smart routing for any task</div>
                     </div>
                   </button>
-                  <button onClick={() => setSelectedLLM('lipi-llm')}
-                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'lipi-llm' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
+                  <button onClick={() => setSelectedLLM('gemma-4')}
+                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'gemma-4' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
                     <span className="material-symbols-outlined text-[14px] mt-0.5">bolt</span>
                     <div className="flex-1 text-left">
-                      <div className="font-semibold">LipiLLM (Fast)</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Instant text analysis</div>
+                      <div className="font-semibold">Gemma 4 4B (Fast)</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Fast answers on GPU 0</div>
                     </div>
                   </button>
                   <button onClick={() => setSelectedLLM('gemma-4-26b-4bit')}
                     className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'gemma-4-26b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
                     <span className="material-symbols-outlined text-[14px] mt-0.5">psychology</span>
                     <div className="flex-1 text-left">
-                      <div className="font-semibold">Gemma 26B (Analyst)</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Deep reasoning on documents</div>
-                    </div>
-                  </button>
-                  <button onClick={() => setSelectedLLM('qwen3.6-27b-4bit')}
-                    className={`w-full flex items-start gap-2 px-3 py-2.5 text-xs transition-colors ${selectedLLM === 'qwen3.6-27b-4bit' ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span className="material-symbols-outlined text-[14px] mt-0.5">article</span>
-                    <div className="flex-1 text-left">
-                      <div className="font-semibold">Qwen 27B (Report)</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">Long-form content generation</div>
+                      <div className="font-semibold">Gemma 4 26B (Analyst)</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Deep reasoning on GPU 1</div>
                     </div>
                   </button>
                 </div>
@@ -576,7 +589,7 @@ export default function ChatAssistant() {
             const el = bodyRef.current;
             if (el) setUserScrolled(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
           }}
-          className={`flex-1 overflow-y-auto px-gutter py-xl hide-scrollbar relative transition-colors ${isDragging ? 'bg-primary/5' : ''}`}
+          className={`flex-1 overflow-y-auto px-3 sm:px-gutter py-lg sm:py-xl hide-scrollbar relative transition-colors ${isDragging ? 'bg-primary/5' : ''}`}
         >
           {isDragging && (
             <div className="absolute inset-0 flex items-center justify-center bg-primary/10 backdrop-blur-sm pointer-events-none z-40 rounded-lg border-2 border-dashed border-primary">
@@ -586,7 +599,7 @@ export default function ChatAssistant() {
               </div>
             </div>
           )}
-          <div className="max-w-3xl mx-auto space-y-8">
+          <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
             {messages.map((msg, idx) => (
               <MsgBubble key={msg.id} msg={msg} idx={idx}
                 isLast={idx === messages.length - 1} isLoading={isLoading}
@@ -637,16 +650,16 @@ export default function ChatAssistant() {
         {/* Jump-to-bottom */}
         {userScrolled && (
           <button onClick={() => { setUserScrolled(false); scrollBottom(); }}
-            className="absolute bottom-28 right-96 p-2 bg-white border border-slate-200 rounded-full shadow-floating text-slate-500 hover:text-on-surface z-10">
+            className="absolute bottom-28 right-4 lg:right-96 p-2 bg-white border border-slate-200 rounded-full shadow-floating text-slate-500 hover:text-on-surface z-10">
             <span className="material-symbols-outlined text-[20px]">keyboard_arrow_down</span>
           </button>
         )}
 
         {/* Footer input */}
-        <footer className="p-6 bg-white border-t border-slate-200 flex-shrink-0">
+        <footer className="p-3 sm:p-6 bg-white border-t border-slate-200 flex-shrink-0">
           <div className="max-w-3xl mx-auto space-y-3">
             {activeDocuments.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {activeDocuments.map(d => (
                   <FilePreviewCard key={d.id} file={d} onRemove={doc => setActiveDocuments(prev => prev.filter(x => x.id !== doc.id))} />
                 ))}
@@ -691,7 +704,7 @@ export default function ChatAssistant() {
                 placeholder={activeDocuments.length > 0
                   ? `Ask about ${activeDocuments.map(d => d.name || d.file_name).slice(0, 2).join(', ')} in English or नेपाली...`
                   : 'Ask LipiCore about your documents in English or नेपाली…'}
-                className="w-full pl-12 pr-28 py-4 bg-slate-100 border-none focus:ring-2 focus:ring-secondary/20 rounded font-body-sm text-on-surface placeholder:text-slate-400 resize-none min-h-[56px] max-h-[160px] leading-relaxed outline-none"
+                className="w-full pl-12 pr-20 sm:pr-28 py-4 bg-slate-100 border-none focus:ring-2 focus:ring-secondary/20 rounded font-body-sm text-on-surface placeholder:text-slate-400 resize-none min-h-[56px] max-h-[160px] leading-relaxed outline-none"
                 rows={1}
                 disabled={isLoading && !abortCtrl}
               />
@@ -702,7 +715,7 @@ export default function ChatAssistant() {
                     <span className="material-symbols-outlined text-[16px]">stop_circle</span> STOP
                   </button>
                 ) : (
-                  <button onClick={handleSend} disabled={!input.trim() && activeDocuments.length === 0}
+                  <button onClick={handleSend} disabled={!input.trim()}
                     className="bg-primary text-white p-2.5 rounded shadow-sm hover:opacity-90 active:scale-95 transition-all disabled:opacity-40">
                     <span className="material-symbols-outlined text-[20px]">send</span>
                   </button>
@@ -711,7 +724,7 @@ export default function ChatAssistant() {
             </div>
 
             <p className="text-center text-[10px] text-slate-400 font-label-caps tracking-widest uppercase">
-              Encrypted End-to-End · Private Cloud Environment
+              Encrypted in transit · Private cloud environment
             </p>
           </div>
         </footer>
@@ -837,7 +850,7 @@ function MsgBubble({ msg, idx, isLast, isLoading, editingId, editText, setEditTe
             {/* Timestamp */}
             {isUser && (
               <div className="text-[10px] text-slate-400 text-right font-label-caps uppercase mt-1">
-                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · EN
+                {formatMessageTime(msg.created_at)} · EN
               </div>
             )}
           </div>

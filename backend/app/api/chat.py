@@ -118,6 +118,23 @@ def _update_session_summary(session: ChatSession, user_message: str, assistant_m
     db.add(session)
     db.commit()
 
+def _should_mix_global_knowledge(message: str) -> bool:
+    text = (message or "").lower()
+    global_terms = (
+        "global",
+        "knowledge base",
+        "policy library",
+        "nrb",
+        "regulation",
+        "directive",
+        "compare",
+        "against",
+        "across documents",
+        "all documents",
+        "other documents",
+    )
+    return any(term in text for term in global_terms)
+
 @router.post("/sessions", response_model=ChatSessionResponse)
 def create_chat_session(
     *,
@@ -367,7 +384,8 @@ async def stream_chat_message(
                         document_scope="session_upload",
                     )
 
-                global_limit = max(0, 5 - len(session_results))
+                allow_global_mix = not active_doc_ids or not session_results or _should_mix_global_knowledge(safe_message)
+                global_limit = max(0, 5 - len(session_results)) if allow_global_mix else 0
                 global_results = []
                 if global_limit > 0:
                     global_results = search_points(

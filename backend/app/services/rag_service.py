@@ -84,7 +84,24 @@ def _build_sources(filtered_results, db):
     return sources
 
 
-def _search(query_vector, bank_id, active_document_ids, session_id):
+def _should_mix_global_knowledge(message: str) -> bool:
+    text = (message or "").lower()
+    return any(term in text for term in (
+        "global",
+        "knowledge base",
+        "policy library",
+        "nrb",
+        "regulation",
+        "directive",
+        "compare",
+        "against",
+        "across documents",
+        "all documents",
+        "other documents",
+    ))
+
+
+def _search(query_vector, bank_id, active_document_ids, session_id, query: str):
     session_results = []
     if active_document_ids:
         try:
@@ -97,7 +114,8 @@ def _search(query_vector, bank_id, active_document_ids, session_id):
         except Exception:
             pass
 
-    global_limit = max(0, 5 - len(session_results))
+    allow_global_mix = not active_document_ids or not session_results or _should_mix_global_knowledge(query)
+    global_limit = max(0, 5 - len(session_results)) if allow_global_mix else 0
     global_results = []
     if global_limit > 0:
         try:
@@ -126,7 +144,7 @@ def generate_rag_response(
     except Exception:
         return NOT_FOUND_RESPONSE, []
 
-    results = _search(query_vector, bank_id, active_document_ids, session_id)
+    results = _search(query_vector, bank_id, active_document_ids, session_id, query)
     if not results:
         return NOT_FOUND_RESPONSE, []
 
@@ -157,7 +175,7 @@ async def async_generate_rag_response(
     except Exception:
         return NOT_FOUND_RESPONSE, []
 
-    results = _search(query_vector, bank_id, active_document_ids, session_id)
+    results = _search(query_vector, bank_id, active_document_ids, session_id, query)
     if not results:
         return NOT_FOUND_RESPONSE, []
 

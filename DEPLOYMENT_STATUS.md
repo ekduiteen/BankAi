@@ -1,7 +1,7 @@
 # BankAi Public Deployment - Live
 
 **Date:** May 7, 2026
-**Status:** Production stack deployed and ready for validation
+**Status:** Production stack deployed; chat UX fixes ready for live rollout
 
 ## Public Access
 
@@ -105,6 +105,9 @@ GET /api/chat/models/status
 - Do not publish admin passwords or JWT secrets in documentation.
 - Manage credentials through the remote `.env` file or a secret manager.
 - Use `https://ai.silverlining.com.np` for browser testing.
+- Chat UI now supports a mobile drawer layout, corrected model labels for clean
+  Gemma 4 vLLM tiers, safer uploaded-document source selection, real message
+  timestamps, and env-driven Playwright checks.
 - If Chrome still labels the site "Not secure" while the certificate is valid,
   clear site data/HSTS state or retest in a fresh Incognito window. Public TLS
   verification and headless browser checks passed for the current certificate.

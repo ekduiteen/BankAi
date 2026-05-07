@@ -12,8 +12,8 @@ export const MODEL_MODES = [
     id: 'fast',
     label: 'Fast',
     icon: 'bolt',
-    model: 'lipi-llm',
-    description: 'LipiLLM — fine-tuned, instant responses',
+    model: 'gemma-4',
+    description: 'Gemma 4 4B — fast responses on GPU 0',
     badge: 'DEFAULT',
   },
   {
@@ -28,8 +28,8 @@ export const MODEL_MODES = [
     id: 'report',
     label: 'Report',
     icon: 'article',
-    model: 'qwen3.6-27b-4bit',
-    description: 'Qwen3.6 27B — long-form drafting and reports',
+    model: 'gemma-4-26b-4bit',
+    description: 'Gemma 4 26B — long-form drafting and reports',
     badge: 'ON-DEMAND',
   },
 ];

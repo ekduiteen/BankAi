@@ -9,7 +9,7 @@ const TOP_NAV = [
   { label: 'Compliance', to: '/regulatory' },
 ];
 
-export default function TopBar({ language, onLanguageChange }) {
+export default function TopBar({ language, onLanguageChange, onMenuClick }) {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const initials = (user.name || user.email || 'U').split(/[\s@]/)[0].slice(0, 2).toUpperCase();
@@ -22,9 +22,17 @@ export default function TopBar({ language, onLanguageChange }) {
   };
 
   return (
-    <header className="fixed top-0 left-64 right-0 h-16 flex justify-between items-center px-6 bg-white border-b border-slate-200 z-30">
+    <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 flex justify-between items-center px-3 sm:px-6 bg-white border-b border-slate-200 z-30">
       {/* Left: wordmark + top nav */}
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-3 sm:gap-8 min-w-0">
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={onMenuClick}
+          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded lg:hidden"
+        >
+          <span className="material-symbols-outlined text-[21px]">menu</span>
+        </button>
         <div className="flex items-center gap-1.5">
           <span className="text-xl font-bold tracking-tighter text-slate-900 font-public-sans">
             LipiCore
@@ -53,7 +61,7 @@ export default function TopBar({ language, onLanguageChange }) {
       </div>
 
       {/* Right: bilingual toggle + icons + avatar */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* Bilingual switcher */}
         <div className="flex items-center bg-slate-100 rounded p-1 gap-1">
           <button
@@ -81,7 +89,7 @@ export default function TopBar({ language, onLanguageChange }) {
         </div>
 
         {/* Icon cluster */}
-        <div className="flex items-center gap-1 border-l border-slate-200 pl-4">
+        <div className="hidden sm:flex items-center gap-1 border-l border-slate-200 pl-4">
           <button
             className="p-2 text-slate-500 hover:text-slate-900 rounded hover:bg-slate-100 transition-colors"
             title="Security Status"
