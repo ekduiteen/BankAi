@@ -9,6 +9,7 @@
 - Preserved real message timestamps and fixed stopped-generation partial response handling.
 - Replaced overclaimed "Encrypted End-to-End" UI copy with "Encrypted in transit".
 - Switched the frontend icon font to Material Symbols Outlined.
+- Replaced the default Vite favicon reference with an inline BankAi favicon.
 - Updated Playwright config and chat e2e tests to use env-driven base URL and credentials with installed Chrome.
 
 Verification:
