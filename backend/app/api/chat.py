@@ -284,16 +284,22 @@ async def create_chat_message(
         sources = []
     else:
         active_doc_ids = _session_active_document_ids(session, chat_request.active_document_ids)
-        answer, sources = await async_generate_rag_response(
-            retrieval_query,
-            current_user.bank_id,
-            current_user.role,
-            db,
-            chat_request.language,
-            active_document_ids=active_doc_ids,
-            session_id=session_id,
-            user_id=current_user.id,
-        )
+        if active_doc_ids:
+            answer, sources = await async_generate_rag_response(
+                retrieval_query,
+                current_user.bank_id,
+                current_user.role,
+                db,
+                chat_request.language,
+                active_document_ids=active_doc_ids,
+                session_id=session_id,
+                user_id=current_user.id,
+            )
+        else:
+            from ..services.llm_service import async_call_llm
+            prompt = GENERAL_PROMPT_TEMPLATE.format(system=sys_identity, question=safe_message)
+            answer = await async_call_llm(prompt, user_id=current_user.id, role=current_user.role)
+            sources = []
     
     # 4. Save AI message
     ai_msg = ChatMessage(
