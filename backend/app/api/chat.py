@@ -387,13 +387,14 @@ async def stream_chat_message(
         if has_image and selected_model and not _model_supports_vision(selected_model):
             yield f"data: {json.dumps({'type': 'status', 'message': '⚠️ Warning: The selected model does not support image analysis. Using text-based analysis instead.'})}\n\n"
 
-        yield f"data: {json.dumps({'type': 'status', 'message': 'Searching your uploaded documents...'})}\n\n"
+        if active_doc_ids:
+            yield f"data: {json.dumps({'type': 'status', 'message': 'Searching your uploaded documents...'})}\n\n"
 
         sources_list = []
         sys_identity = get_system_identity(chat_request.language)
         logger.info("[STREAM] Got system identity")
 
-        if not has_image:
+        if not has_image and active_doc_ids:
             try:
                 logger.info("[STREAM] Starting RAG search")
                 from ..services.embedding_service import generate_embeddings
@@ -406,17 +407,16 @@ async def stream_chat_message(
                 logger.info("[STREAM] Embeddings generated")
 
                 session_results = []
-                if active_doc_ids:
-                    session_results = search_points(
-                        query_vector,
-                        current_user.bank_id,
-                        limit=5,
-                        document_ids=active_doc_ids,
-                        session_id=session_id,
-                        document_scope="session_upload",
-                    )
+                session_results = search_points(
+                    query_vector,
+                    current_user.bank_id,
+                    limit=5,
+                    document_ids=active_doc_ids,
+                    session_id=session_id,
+                    document_scope="session_upload",
+                )
 
-                allow_global_mix = not active_doc_ids or not session_results or _should_mix_global_knowledge(safe_message)
+                allow_global_mix = not session_results or _should_mix_global_knowledge(safe_message)
                 global_limit = max(0, 5 - len(session_results)) if allow_global_mix else 0
                 global_results = []
                 if global_limit > 0:
@@ -483,7 +483,10 @@ async def stream_chat_message(
                 logger.error(f"RAG failed in stream: {e}")
 
         logger.info("[STREAM] About to yield prepare status")
-        yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing source-based answer...'})}\n\n"
+        if active_doc_ids:
+            yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing source-based answer...'})}\n\n"
+        else:
+            yield f"data: {json.dumps({'type': 'status', 'message': 'Generating response...'})}\n\n"
 
         vllm_messages = [{"role": "system", "content": sys_identity}]
         for msg in history[-10:]:
