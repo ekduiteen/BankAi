@@ -786,7 +786,7 @@ function MsgBubble({ msg, idx, isLast, isLoading, editingId, editText, setEditTe
 
 
             {/* Source chips */}
-            {!isUser && msg.sources && msg.sources.length > 0 && (
+            {!isUser && msg.sources && msg.sources.length > 0 && activeDocuments.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {msg.sources.map((s, i) => (
                   <span key={i} title={s.snippet} data-testid="source-card"
