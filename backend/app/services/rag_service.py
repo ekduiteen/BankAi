@@ -103,7 +103,7 @@ def _filter_results(results, db, session_id, user_role):
     return [r for r in results if r.payload and r.payload.get("document_id") in allowed_docs]
 
 
-def _build_sources(filtered_results, db, min_relevance_score=0.6):
+def _build_sources(filtered_results, db, min_relevance_score=0.4):
     sources = []
     seen: set[int] = set()
     for res in filtered_results:
