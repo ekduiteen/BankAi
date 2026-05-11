@@ -149,6 +149,9 @@ Respond ONLY as JSON, no markdown, no explanation."""
 def process_document(document_id: int):
     """Background task — creates its own DB session so it is safe to run after the request ends."""
     from ..db.session import engine
+    from ..models.bank import Bank  # noqa: F401
+    from ..models.chat import ChatSession  # noqa: F401
+    from ..models.user import User  # noqa: F401
 
     with Session(engine) as db:
         try:

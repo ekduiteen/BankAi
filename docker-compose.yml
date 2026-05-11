@@ -112,7 +112,7 @@ services:
     entrypoint: /bin/bash
     command:
       - -c
-      - "vllm serve /data/models/llm/gemma-4-E4B-it --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.45 --max-model-len 4096 --max-num-seqs 16 --served-model-name gemma-4 --enable-prefix-caching"
+      - "vllm serve /data/models/llm/gemma-4-E4B-it --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.45 --max-model-len 4096 --max-num-seqs 16 --served-model-name gemma-4 --enable-prefix-caching --kv-cache-dtype fp8"
     volumes:
       - /data:/data
     ports:
@@ -134,7 +134,7 @@ services:
     entrypoint: /bin/bash
     command:
       - -c
-      - "vllm serve /data/models/llm/gemma-4-26b-a4b-awq-4bit --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.90 --max-model-len 4096 --max-num-batched-tokens 4096 --max-num-seqs 8 --served-model-name gemma-4-26b-4bit --enable-prefix-caching"
+      - "vllm serve /data/models/llm/gemma-4-26b-a4b-awq-4bit --host 0.0.0.0 --port 8000 --gpu-memory-utilization 0.80 --max-model-len 4096 --max-num-batched-tokens 4096 --max-num-seqs 8 --served-model-name gemma-4-26b-4bit --enable-prefix-caching --kv-cache-dtype fp8"
     volumes:
       - /data:/data
     ports:

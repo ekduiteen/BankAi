@@ -1,14 +1,19 @@
 from sentence_transformers import SentenceTransformer
 from ..core.config import settings
+from threading import Lock, local
 
-# Load model lazily
-_model = None
+# Load one model per worker thread. SentenceTransformer/PyTorch inference can
+# hang when a model initialized on the app thread is reused by background tasks.
+_thread_state = local()
+_model_lock = Lock()
 
 def get_embedding_model():
-    global _model
-    if _model is None:
-        _model = SentenceTransformer(settings.EMBEDDING_MODEL)
-    return _model
+    model = getattr(_thread_state, "model", None)
+    if model is None:
+        with _model_lock:
+            model = SentenceTransformer(settings.EMBEDDING_MODEL)
+        _thread_state.model = model
+    return model
 
 def generate_embeddings(texts: list[str]) -> list[list[float]]:
     model = get_embedding_model()

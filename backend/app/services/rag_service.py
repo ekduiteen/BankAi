@@ -55,6 +55,7 @@ SECTION_RE = re.compile(
     r"\b(?:दफा|परिच्छेद|बुँदा)\s*([०-९0-9]+(?:[.\-][०-९0-9]+)*)",
     re.IGNORECASE,
 )
+)
 
 
 def _extract_section_label(text: str | None) -> str | None:
@@ -176,7 +177,7 @@ def generate_rag_response(
     except Exception:
         return NOT_FOUND_RESPONSE, []
 
-    results = _search(query_vector, bank_id, active_document_ids, session_id, query)
+    results = _search(query_vector, bank_id, active_document_ids, session_id, question)
     if not results:
         return NOT_FOUND_RESPONSE, []
 
@@ -207,7 +208,7 @@ async def async_generate_rag_response(
     except Exception:
         return NOT_FOUND_RESPONSE, []
 
-    results = _search(query_vector, bank_id, active_document_ids, session_id, query)
+    results = _search(query_vector, bank_id, active_document_ids, session_id, question)
     if not results:
         return NOT_FOUND_RESPONSE, []
 

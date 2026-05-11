@@ -783,17 +783,7 @@ function MsgBubble({ msg, idx, isLast, isLoading, editingId, editText, setEditTe
               : <div className="text-body-sm text-on-surface" data-testid="message-content">{renderMarkdown(msg.content)}</div>
             }
 
-            {isUser && msg.usedDocuments && msg.usedDocuments.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-3">
-                {msg.usedDocuments.map((doc) => (
-                  <span key={doc.id}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded text-[11px] font-medium text-slate-600">
-                    <span className="material-symbols-outlined text-[13px] text-secondary">attach_file</span>
-                    {doc.name}
-                  </span>
-                ))}
-              </div>
-            )}
+
 
             {/* Source chips */}
             {!isUser && msg.sources && msg.sources.length > 0 && (

@@ -730,7 +730,7 @@ async def stream_chat_with_file(
         session_id=session_id,
         user_id=current_user.id,
         role="user",
-        content=f"[File: {file.filename}] {message}"
+        content=message
     )
     db.add(user_msg)
     db.commit()
