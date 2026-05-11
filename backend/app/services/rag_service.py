@@ -189,7 +189,8 @@ def generate_rag_response(
     sys_identity = get_system_identity(language)
     context = "\n\n---\n\n".join(r.payload.get("text", "") for r in filtered)
     prompt = RAG_PROMPT_TEMPLATE.format(system=sys_identity, context=context, question=question)
-    return call_llm(prompt), _build_sources(filtered, db)
+    sources = _build_sources(filtered, db) if active_document_ids else []
+    return call_llm(prompt), sources
 
 
 # ── Async variant (used by request-path handlers) ─────────────────────────────
@@ -220,4 +221,5 @@ async def async_generate_rag_response(
     sys_identity = get_system_identity(language)
     context = "\n\n---\n\n".join(r.payload.get("text", "") for r in filtered)
     prompt = RAG_PROMPT_TEMPLATE.format(system=sys_identity, context=context, question=question)
-    return await async_call_llm(prompt, user_id=user_id, role=user_role), _build_sources(filtered, db)
+    sources = _build_sources(filtered, db) if active_document_ids else []
+    return await async_call_llm(prompt, user_id=user_id, role=user_role), sources
