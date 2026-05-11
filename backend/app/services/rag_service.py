@@ -55,7 +55,6 @@ SECTION_RE = re.compile(
     r"\b(?:दफा|परिच्छेद|बुँदा)\s*([०-९0-9]+(?:[.\-][०-९0-9]+)*)",
     re.IGNORECASE,
 )
-)
 
 
 def _extract_section_label(text: str | None) -> str | None:
